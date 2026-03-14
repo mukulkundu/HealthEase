@@ -6,8 +6,16 @@ import DashboardLayout from "../../components/layout/DashboardLayout";
 import AppointmentCard from "../../components/shared/AppointmentCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarCheck, Search, Clock, Loader2 } from "lucide-react";
+import { CalendarCheck, Search, Clock, Loader2, UserCircle } from "lucide-react";
+import { toast } from "sonner";
 import type { Appointment } from "../../types";
+
+function getGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function PatientDashboard() {
   const { user } = useAuthStore();
@@ -15,9 +23,13 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    appointmentApi.getMyAppointments()
+    appointmentApi
+      .getMyAppointments()
       .then((data) => setAppointments(Array.isArray(data) ? data : []))
-      .catch(() => setAppointments([]))
+      .catch(() => {
+        setAppointments([]);
+        toast.error("Failed to load appointments");
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -25,21 +37,35 @@ export default function PatientDashboard() {
   const upcoming = list.filter(
     (a) => a.status === "PENDING" || a.status === "CONFIRMED"
   );
+  const completed = list.filter((a) => a.status === "COMPLETED");
+  const recentCompleted = [...completed]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 3);
+
+  const handleCancel = async (id: string) => {
+    try {
+      await appointmentApi.cancel(id);
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "CANCELLED" } : a))
+      );
+      toast.success("Appointment cancelled");
+    } catch {
+      toast.error("Failed to cancel appointment");
+    }
+  };
+
+  const firstName = user?.name?.split(" ")[0] ?? "there";
 
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl">
-        {/* Welcome */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user?.name?.split(" ")[0]} 👋
+            {getGreeting()}, {firstName}!
           </h1>
-          <p className="text-gray-500 mt-1">
-            Manage your appointments and find doctors.
-          </p>
+          <p className="text-gray-500 mt-1">Here's your health overview</p>
         </div>
 
-        {/* Quick stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
@@ -47,7 +73,7 @@ export default function PatientDashboard() {
                 <CalendarCheck className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{upcoming?.length ?? 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{upcoming.length}</p>
                 <p className="text-xs text-gray-500">Upcoming</p>
               </div>
             </CardContent>
@@ -58,9 +84,7 @@ export default function PatientDashboard() {
                 <Clock className="h-4 w-4 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {list.filter((a) => a.status === "COMPLETED").length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{completed.length}</p>
                 <p className="text-xs text-gray-500">Completed</p>
               </div>
             </CardContent>
@@ -71,16 +95,13 @@ export default function PatientDashboard() {
                 <Search className="h-4 w-4 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {list.length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{list.length}</p>
                 <p className="text-xs text-gray-500">Total Visits</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick actions */}
         <div className="flex flex-wrap gap-3">
           <Button asChild>
             <Link to="/doctors">
@@ -88,11 +109,15 @@ export default function PatientDashboard() {
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link to="/appointments">View All Appointments</Link>
+            <Link to="/appointments">My Appointments</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/patient/profile">
+              <UserCircle className="mr-2 h-4 w-4" /> My Profile
+            </Link>
           </Button>
         </div>
 
-        {/* Upcoming appointments */}
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-3">
             Upcoming Appointments
@@ -101,7 +126,7 @@ export default function PatientDashboard() {
             <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading...
             </div>
-          ) : !upcoming?.length ? (
+          ) : !upcoming.length ? (
             <div className="rounded-lg border bg-gray-50 py-10 text-center">
               <CalendarCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500">No upcoming appointments</p>
@@ -111,26 +136,55 @@ export default function PatientDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {(upcoming ?? []).slice(0, 3).map((appt) => (
+              {upcoming.slice(0, 3).map((appt) => (
                 <AppointmentCard
                   key={appt.id}
                   appointment={appt}
                   role="PATIENT"
-                  onCancel={async (id) => {
-                    await appointmentApi.cancel(id);
-                    setAppointments((prev) =>
-                      prev.map((a) =>
-                        a.id === id ? { ...a, status: "CANCELLED" } : a
-                      )
-                    );
-                  }}
+                  onCancel={handleCancel}
                 />
               ))}
-              {(upcoming?.length ?? 0) > 3 && (
+              {upcoming.length > 3 && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/appointments">View all {upcoming.length} →</Link>
                 </Button>
               )}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">
+            Recent Activity
+          </h2>
+          {loading ? null : recentCompleted.length === 0 ? (
+            <div className="rounded-lg border bg-gray-50 py-8 text-center">
+              <p className="text-sm text-gray-500">No past appointments yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentCompleted.map((appt) => (
+                <Card key={appt.id}>
+                  <CardContent className="p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">
+                        Dr. {appt.doctor?.user?.name ?? "—"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(appt.date).toLocaleDateString("en-IN", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      Completed
+                    </span>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>

@@ -34,8 +34,8 @@ export const authApi = {
     return res.data;
   },
 
-  me: async (): Promise<ApiResponse<User>> => {
+  me: async (): Promise<User | null> => {
     const res = await client.get<ApiResponse<User>>("/auth/me");
-    return res.data;
+    return (res.data?.data ?? res.data?.user ?? null) as User | null;
   },
 };

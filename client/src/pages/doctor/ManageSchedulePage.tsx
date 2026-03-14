@@ -7,8 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
@@ -36,6 +39,7 @@ export default function ManageSchedulePage() {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ScheduleForm>({
     defaultValues: { slotDuration: 30, bufferTime: 0 },
@@ -70,6 +74,10 @@ export default function ManageSchedulePage() {
 
   const onSubmit = async (data: ScheduleForm) => {
     if (!selectedDay) return;
+    if (data.startTime >= data.endTime) {
+      toast.error("End time must be after start time");
+      return;
+    }
     setSaving(true);
     try {
       const saved = await scheduleApi.upsert({
@@ -94,12 +102,18 @@ export default function ManageSchedulePage() {
     }
   };
 
-  const handleDelete = async (schedule: Schedule) => {
-    setDeletingId(schedule.id);
+  const handleDeleteClick = (schedule: Schedule) => {
+    setScheduleToDelete(schedule);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!scheduleToDelete) return;
+    setDeletingId(scheduleToDelete.id);
     try {
-      await scheduleApi.delete(schedule.id);
-      setSchedules((prev) => prev.filter((s) => s.id !== schedule.id));
-      toast.success(`${schedule.dayOfWeek} schedule removed`);
+      await scheduleApi.delete(scheduleToDelete.id);
+      setSchedules((prev) => prev.filter((s) => s.id !== scheduleToDelete.id));
+      toast.success(`${scheduleToDelete.dayOfWeek} schedule removed`);
+      setScheduleToDelete(null);
     } catch {
       toast.error("Failed to delete schedule");
     } finally {
@@ -124,9 +138,12 @@ export default function ManageSchedulePage() {
         {!loading && !profile && (
           <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
             <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-yellow-800">
-              Please complete your doctor profile before setting a schedule.
-            </p>
+            <div>
+              <p className="text-sm font-medium text-yellow-800">Please complete your profile first</p>
+              <p className="text-sm text-yellow-700 mt-0.5">
+                Complete your doctor profile before setting a schedule.
+              </p>
+            </div>
           </div>
         )}
 
@@ -158,7 +175,7 @@ export default function ManageSchedulePage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">Not set</span>
+                        <span className="text-sm text-gray-400">Not available</span>
                       )}
                     </div>
 
@@ -176,7 +193,7 @@ export default function ManageSchedulePage() {
                           size="sm"
                           variant="ghost"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(schedule)}
+                          onClick={() => handleDeleteClick(schedule)}
                           disabled={deletingId === schedule.id}
                         >
                           {deletingId === schedule.id
@@ -262,6 +279,27 @@ export default function ManageSchedulePage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!scheduleToDelete} onOpenChange={(open) => !open && setScheduleToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete schedule?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-500">
+            Remove {scheduleToDelete && scheduleToDelete.dayOfWeek.charAt(0) + scheduleToDelete.dayOfWeek.slice(1).toLowerCase()} from your weekly availability? This cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setScheduleToDelete(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={deletingId === scheduleToDelete?.id}
+              onClick={handleDeleteConfirm}
+            >
+              {deletingId === scheduleToDelete?.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

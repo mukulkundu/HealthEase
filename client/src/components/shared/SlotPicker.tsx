@@ -14,6 +14,26 @@ interface Props {
   selectedDate?: string;
 }
 
+function to12h(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+function slotGroup(t: string): "morning" | "afternoon" | "evening" {
+  const [h] = t.split(":").map(Number);
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
+const GROUP_LABELS: Record<string, string> = {
+  morning: "Morning",
+  afternoon: "Afternoon",
+  evening: "Evening",
+};
+
 export default function SlotPicker({
   doctorId,
   onSlotSelect,
@@ -27,30 +47,34 @@ export default function SlotPicker({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!date) return;
-    fetchSlots(date);
-  }, [date]);
+    if (selectedDate) setDate(selectedDate);
+  }, [selectedDate]);
 
-  const fetchSlots = async (d: string) => {
+  useEffect(() => {
+    if (!date || !doctorId) return;
     setLoading(true);
     setError("");
-    try {
-      const data = await scheduleApi.getAvailableSlots(doctorId, d);
-      setSlots(data);
-    } catch {
-      setError("Could not load slots for this date.");
-      setSlots([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    scheduleApi
+      .getAvailableSlots(doctorId, date)
+      .then((data) => setSlots(Array.isArray(data) ? data : []))
+      .catch(() => {
+        setError("Could not load slots for this date.");
+        setSlots([]);
+      })
+      .finally(() => setLoading(false));
+  }, [doctorId, date]);
 
   const slotList = Array.isArray(slots) ? slots : [];
   const availableSlots = slotList.filter((s) => s?.available);
 
+  const byGroup = {
+    morning: availableSlots.filter((s) => slotGroup(s.startTime) === "morning"),
+    afternoon: availableSlots.filter((s) => slotGroup(s.startTime) === "afternoon"),
+    evening: availableSlots.filter((s) => slotGroup(s.startTime) === "evening"),
+  };
+
   return (
     <div className="space-y-4">
-      {/* Date picker */}
       <div className="space-y-1.5">
         <Label htmlFor="appt-date">Select Date</Label>
         <Input
@@ -63,7 +87,6 @@ export default function SlotPicker({
         />
       </div>
 
-      {/* Slots grid */}
       <div>
         <Label className="mb-2 block">Available Time Slots</Label>
 
@@ -80,39 +103,50 @@ export default function SlotPicker({
 
         {!loading && !error && availableSlots.length === 0 && (
           <p className="text-sm text-gray-500 py-2">
-            No schedule set for this day, or no slots available.
-          </p>
-        )}
-
-        {!loading && !error && availableSlots.length > 0 && (
-          <p className="text-xs text-gray-500 mb-2">
-            {availableSlots.length} slot{availableSlots.length !== 1 ? "s" : ""} available
+            No slots available for this date. Doctor may not be available on this day.
           </p>
         )}
 
         {!loading && availableSlots.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-            {availableSlots.map((slot) => {
-              const isSelected =
-                selectedSlot?.startTime === slot.startTime &&
-                selectedDate === date;
-              return (
-                <Button
-                  key={slot.startTime}
-                  type="button"
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "text-xs h-9",
-                    isSelected && "ring-2 ring-blue-500 ring-offset-1"
-                  )}
-                  onClick={() => onSlotSelect(slot, date)}
-                >
-                  {slot.startTime}
-                </Button>
-              );
-            })}
-          </div>
+          <>
+            <p className="text-xs text-gray-500 mb-3">
+              {availableSlots.length} slot{availableSlots.length !== 1 ? "s" : ""} available
+            </p>
+            <div className="space-y-4">
+              {(["morning", "afternoon", "evening"] as const).map(
+                (group) =>
+                  byGroup[group].length > 0 && (
+                    <div key={group}>
+                      <p className="text-xs font-medium text-gray-500 mb-2">
+                        {GROUP_LABELS[group]}
+                      </p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {byGroup[group].map((slot) => {
+                          const isSelected =
+                            selectedSlot?.startTime === slot.startTime &&
+                            selectedDate === date;
+                          return (
+                            <Button
+                              key={slot.startTime}
+                              type="button"
+                              variant={isSelected ? "default" : "outline"}
+                              size="sm"
+                              className={cn(
+                                "text-xs h-9",
+                                isSelected && "ring-2 ring-blue-500 ring-offset-1"
+                              )}
+                              onClick={() => onSlotSelect(slot, date)}
+                            >
+                              {to12h(slot.startTime)}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

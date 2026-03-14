@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,12 @@ interface FormData {
 }
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
   const { login, loading } = useAuth();
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
 
-  const onSubmit = (data: FormData) => login(data);
+  const onSubmit = (data: FormData) => login(data, redirect);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

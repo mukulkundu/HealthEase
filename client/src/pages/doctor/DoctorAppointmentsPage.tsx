@@ -12,32 +12,36 @@ export default function DoctorAppointmentsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    appointmentApi.getDoctorAppointments()
+    appointmentApi
+      .getDoctorAppointments()
       .then((data) => setAppointments(Array.isArray(data) ? data : []))
-      .catch(() => setAppointments([]))
+      .catch(() => {
+        setAppointments([]);
+        toast.error("Failed to load appointments");
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
+    const prev = appointments;
+    setAppointments((p) => p.map((a) => (a.id === id ? { ...a, status } : a)));
     try {
       await appointmentApi.updateStatus(id, status);
-      setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status } : a))
-      );
       toast.success(`Marked as ${status.toLowerCase()}`);
     } catch {
+      setAppointments(prev);
       toast.error("Failed to update status");
     }
   };
 
   const handleCancel = async (id: string) => {
+    const prev = appointments;
+    setAppointments((p) => p.map((a) => (a.id === id ? { ...a, status: "CANCELLED" } : a)));
     try {
       await appointmentApi.cancel(id);
-      setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: "CANCELLED" } : a))
-      );
       toast.success("Appointment cancelled");
     } catch {
+      setAppointments(prev);
       toast.error("Failed to cancel");
     }
   };
@@ -45,7 +49,7 @@ export default function DoctorAppointmentsPage() {
   const list = Array.isArray(appointments) ? appointments : [];
   const pending = list.filter((a) => a.status === "PENDING");
   const confirmed = list.filter((a) => a.status === "CONFIRMED");
-  const completed = list.filter((a) => a.status === "COMPLETED");
+  const completed = list.filter((a) => a.status === "COMPLETED" || a.status === "NO_SHOW");
   const cancelled = list.filter((a) => a.status === "CANCELLED");
 
   const EmptyState = () => (

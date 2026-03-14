@@ -7,6 +7,7 @@ import { errorMiddleware } from "./middleware/error.middleware.js";
 
 // Route imports (filled in as we build each module)
 import authRoutes from "./modules/auth/auth.routes.js";
+import userRoutes from "./modules/user/user.routes.js";
 import doctorRoutes from "./modules/doctor/doctor.routes.js";
 import scheduleRoutes from "./modules/schedule/schedule.routes.js";
 import appointmentRoutes from "./modules/appointment/appointment.routes.js";
@@ -43,6 +44,7 @@ app.use("/api", limiter);
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/appointments", appointmentRoutes);

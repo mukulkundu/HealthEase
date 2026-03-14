@@ -37,7 +37,10 @@ export function useAuth() {
     }
   };
 
-  const login = async (data: { email: string; password: string }) => {
+  const login = async (
+    data: { email: string; password: string },
+    redirect?: string | null
+  ) => {
     setLoading(true);
     let user: { name?: string; role: Role } | null = null;
     try {
@@ -55,7 +58,9 @@ export function useAuth() {
     }
     if (user) {
       toast.success(`Welcome back, ${user.name ?? "User"}!`);
-      navigate(getRoleHome(user.role));
+      const target =
+        redirect && redirect.startsWith("/") ? redirect : getRoleHome(user.role);
+      navigate(target);
     }
   };
 

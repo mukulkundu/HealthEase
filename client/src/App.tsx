@@ -15,15 +15,18 @@ import RegisterPage from "./pages/auth/RegisterPage";
 // Public pages
 import LandingPage from "./pages/public/LandingPage";
 import DoctorListPage from "./pages/public/DoctorListPage";
-import DoctorProfilePage from "./pages/public/DoctorProfilePage";
+import PublicDoctorProfilePage from "./pages/public/DoctorProfilePage";
 
 // Patient pages
 import PatientDashboard from "./pages/patient/PatientDashboard";
+import PatientProfilePage from "./pages/patient/PatientProfilePage";
 import BookAppointmentPage from "./pages/patient/BookAppointmentPage";
 import MyAppointmentsPage from "./pages/patient/MyAppointmentsPage";
 
 // Doctor pages
 import DoctorDashboard from "./pages/doctor/DoctorDashboard";
+import SetupProfilePage from "./pages/doctor/SetupProfilePage";
+import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
 import ManageSchedulePage from "./pages/doctor/ManageSchedulePage";
 import DoctorAppointmentsPage from "./pages/doctor/DoctorAppointmentsPage";
 
@@ -44,8 +47,8 @@ function AppContent() {
     const { setAuth, clearAuth, setLoading } = useAuthStore.getState();
     authApi
       .me()
-      .then((res) => {
-        if (res.data) setAuth(res.data);
+      .then((user) => {
+        if (user) setAuth(user);
       })
       .catch(() => clearAuth())
       .finally(() => setLoading(false));
@@ -65,7 +68,7 @@ function AppContent() {
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/doctors" element={<DoctorListPage />} />
-        <Route path="/doctors/:id" element={<DoctorProfilePage />} />
+        <Route path="/doctors/:id" element={<PublicDoctorProfilePage />} />
 
         {/* Auth */}
         <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -87,11 +90,26 @@ function AppContent() {
             <MyAppointmentsPage />
           </ProtectedRoute>
         } />
+        <Route path="/patient/profile" element={
+          <ProtectedRoute allowedRoles={["PATIENT"]}>
+            <PatientProfilePage />
+          </ProtectedRoute>
+        } />
 
         {/* Doctor routes */}
         <Route path="/doctor/dashboard" element={
           <ProtectedRoute allowedRoles={["DOCTOR"]}>
             <DoctorDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/doctor/setup-profile" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <SetupProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/doctor/profile" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <DoctorProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/doctor/schedule" element={

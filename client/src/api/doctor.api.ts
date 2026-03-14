@@ -34,7 +34,7 @@ export const doctorApi = {
     avatarUrl?: string;
   }): Promise<DoctorProfile> => {
     const res = await client.post<ApiResponse<DoctorProfile>>("/doctors/profile", data);
-    return res.data.data;
+    return res.data?.data as DoctorProfile;
   },
 
   updateProfile: async (data: Partial<{
@@ -47,6 +47,6 @@ export const doctorApi = {
     avatarUrl: string;
   }>): Promise<DoctorProfile> => {
     const res = await client.put<ApiResponse<DoctorProfile>>("/doctors/profile", data);
-    return res.data.data;
+    return res.data?.data as DoctorProfile;
   },
 };

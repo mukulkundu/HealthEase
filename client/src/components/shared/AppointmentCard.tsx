@@ -41,6 +41,21 @@ export default function AppointmentCard({
     day: "numeric",
   });
 
+  const formatTime12h = (t: string) => {
+    try {
+      const [h, m] = t.split(":").map(Number);
+      const period = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+    } catch {
+      return t;
+    }
+  };
+  const timeStr =
+    appointment.startTime && appointment.endTime
+      ? `${formatTime12h(appointment.startTime)} – ${formatTime12h(appointment.endTime)}`
+      : "—";
+
   return (
     <Card className="hover:shadow-sm transition-shadow">
       <CardContent className="p-4">
@@ -64,7 +79,7 @@ export default function AppointmentCard({
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Clock className="h-3.5 w-3.5" />
-              {appointment.startTime} – {appointment.endTime}
+              {timeStr}
             </div>
             {appointment.notes && (
               <p className="text-xs text-gray-500 italic pl-6 line-clamp-2">
@@ -107,14 +122,23 @@ export default function AppointmentCard({
                   </Button>
                 )}
                 {appointment.status === "CONFIRMED" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-xs h-7"
-                    onClick={() => onStatusChange(appointment.id, "COMPLETED")}
-                  >
-                    Mark Done
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => onStatusChange(appointment.id, "COMPLETED")}
+                    >
+                      Mark Complete
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7"
+                      onClick={() => onStatusChange(appointment.id, "NO_SHOW")}
+                    >
+                      Mark No Show
+                    </Button>
+                  </>
                 )}
                 {isCancellable && onCancel && (
                   <Button

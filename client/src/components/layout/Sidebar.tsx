@@ -5,7 +5,8 @@ import {
   LayoutDashboard,
   Calendar,
   CalendarCheck,
-  Users,
+  Search,
+  UserCircle,
 } from "lucide-react";
 
 interface NavItem {
@@ -16,14 +17,16 @@ interface NavItem {
 
 const patientNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Find Doctors", href: "/doctors", icon: <Users className="h-4 w-4" /> },
+  { label: "Find Doctors", href: "/doctors", icon: <Search className="h-4 w-4" /> },
   { label: "My Appointments", href: "/appointments", icon: <CalendarCheck className="h-4 w-4" /> },
+  { label: "My Profile", href: "/patient/profile", icon: <UserCircle className="h-4 w-4" /> },
 ];
 
 const doctorNav: NavItem[] = [
   { label: "Dashboard", href: "/doctor/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Appointments", href: "/doctor/appointments", icon: <CalendarCheck className="h-4 w-4" /> },
+  { label: "My Profile", href: "/doctor/profile", icon: <UserCircle className="h-4 w-4" /> },
   { label: "My Schedule", href: "/doctor/schedule", icon: <Calendar className="h-4 w-4" /> },
+  { label: "Appointments", href: "/doctor/appointments", icon: <CalendarCheck className="h-4 w-4" /> },
 ];
 
 export default function Sidebar() {

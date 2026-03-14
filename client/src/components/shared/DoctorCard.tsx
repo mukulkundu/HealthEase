@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, Clock, IndianRupee } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
 import type { DoctorProfile } from "../../types";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function DoctorCard({ doctor }: Props) {
+  const { isAuthenticated, user } = useAuthStore();
   const name = doctor.user?.name ?? "Doctor";
   const initials = name
     .split(" ")
@@ -65,11 +67,16 @@ export default function DoctorCard({ doctor }: Props) {
 
             {/* Languages */}
             <div className="mt-2 flex flex-wrap gap-1">
-              {doctor.languages.slice(0, 3).map((lang) => (
+              {(doctor.languages ?? []).slice(0, 3).map((lang) => (
                 <Badge key={lang} variant="secondary" className="text-xs">
                   {lang}
                 </Badge>
               ))}
+              {(doctor.languages?.length ?? 0) > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{(doctor.languages?.length ?? 0) - 3} more
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -79,9 +86,17 @@ export default function DoctorCard({ doctor }: Props) {
           <Button variant="outline" size="sm" className="flex-1" asChild>
             <Link to={`/doctors/${doctor.id}`}>View Profile</Link>
           </Button>
-          <Button size="sm" className="flex-1" asChild>
-            <Link to={`/book/${doctor.id}`}>Book Now</Link>
-          </Button>
+          {user?.role === "DOCTOR" ? null : isAuthenticated && user?.role === "PATIENT" ? (
+            <Button size="sm" className="flex-1" asChild>
+              <Link to={`/book/${doctor.id}`}>Book Now</Link>
+            </Button>
+          ) : (
+            <Button size="sm" className="flex-1" asChild>
+              <Link to={`/login?redirect=${encodeURIComponent(`/book/${doctor.id}`)}`}>
+                Sign In to Book
+              </Link>
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
