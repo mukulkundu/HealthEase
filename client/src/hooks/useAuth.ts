@@ -17,38 +17,53 @@ export function useAuth() {
     role: "PATIENT" | "DOCTOR";
   }) => {
     setLoading(true);
+    let user: { role: Role } | null = null;
     try {
-      const res = await authApi.register(data);
-      setAuth(res.user, res.accessToken, res.refreshToken);
-      toast.success("Account created successfully!");
-      navigate(getRoleHome(res.user.role));
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Registration failed");
+      const response = await authApi.register(data);
+      const u = response?.data?.user;
+      if (u) {
+        setAuth(u);
+        user = u;
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Registration failed");
     } finally {
       setLoading(false);
+    }
+    if (user) {
+      toast.success("Account created successfully!");
+      navigate(getRoleHome(user.role));
     }
   };
 
   const login = async (data: { email: string; password: string }) => {
     setLoading(true);
+    let user: { name?: string; role: Role } | null = null;
     try {
-      const res = await authApi.login(data);
-      setAuth(res.user, res.accessToken, res.refreshToken);
-      toast.success(`Welcome back, ${res.user.name}!`);
-      navigate(getRoleHome(res.user.role));
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid email or password");
+      const response = await authApi.login(data);
+      const u = response?.data?.user;
+      if (u) {
+        setAuth(u);
+        user = u;
+      }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || "Invalid email or password");
     } finally {
       setLoading(false);
+    }
+    if (user) {
+      toast.success(`Welcome back, ${user.name ?? "User"}!`);
+      navigate(getRoleHome(user.role));
     }
   };
 
   const logout = async () => {
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) await authApi.logout(refreshToken);
+      await authApi.logout();
     } catch {
-      // silently fail — clear locally regardless
+      // clear locally regardless
     } finally {
       clearAuth();
       navigate("/login");

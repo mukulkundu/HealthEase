@@ -1,5 +1,5 @@
 import client from "./client";
-import type { Appointment, AppointmentStatus } from "../types";
+import type { ApiResponse, Appointment, AppointmentStatus } from "../types";
 
 export const appointmentApi = {
   // Patient — book an appointment
@@ -10,26 +10,26 @@ export const appointmentApi = {
     endTime: string;
     notes?: string;
   }): Promise<Appointment> => {
-    const res = await client.post("/appointments", data);
-    return res.data;
+    const res = await client.post<ApiResponse<Appointment>>("/appointments", data);
+    return res.data.data;
   },
 
   // Patient — get own appointments
   getMyAppointments: async (): Promise<Appointment[]> => {
-    const res = await client.get("/appointments/my");
-    return res.data;
+    const res = await client.get<ApiResponse<Appointment[]>>("/appointments/my");
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   },
 
   // Doctor — get own appointments
   getDoctorAppointments: async (): Promise<Appointment[]> => {
-    const res = await client.get("/appointments/doctor");
-    return res.data;
+    const res = await client.get<ApiResponse<Appointment[]>>("/appointments/doctor");
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   },
 
   // Patient or Doctor — cancel an appointment
   cancel: async (id: string): Promise<Appointment> => {
-    const res = await client.patch(`/appointments/${id}/cancel`);
-    return res.data;
+    const res = await client.patch<ApiResponse<Appointment>>(`/appointments/${id}/cancel`);
+    return res.data.data;
   },
 
   // Doctor — update appointment status
@@ -37,7 +37,7 @@ export const appointmentApi = {
     id: string,
     status: AppointmentStatus
   ): Promise<Appointment> => {
-    const res = await client.patch(`/appointments/${id}/status`, { status });
-    return res.data;
+    const res = await client.patch<ApiResponse<Appointment>>(`/appointments/${id}/status`, { status });
+    return res.data.data;
   },
 };

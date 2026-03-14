@@ -1,7 +1,12 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "sonner";
 import { useAuthStore } from "./store/authStore";
+import { authApi } from "./api/auth.api";
 import type { Role } from "./types";
+
+// Ensure /auth/me is only called once per app load (avoids Strict Mode double-call and re-run loops)
+let initialAuthCheckDone = false;
 
 // Auth pages
 import LoginPage from "./pages/auth/LoginPage";
@@ -24,10 +29,38 @@ import DoctorAppointmentsPage from "./pages/doctor/DoctorAppointmentsPage";
 
 // Layout
 import ProtectedRoute from "./components/layout/ProtectedRoute";
+import { Loader2 } from "lucide-react";
 
-function App() {
+function AppContent() {
+  const isLoading = useAuthStore((s) => s.isLoading);
+
+  useEffect(() => {
+    if (initialAuthCheckDone) {
+      useAuthStore.getState().setLoading(false);
+      return;
+    }
+    initialAuthCheckDone = true;
+
+    const { setAuth, clearAuth, setLoading } = useAuthStore.getState();
+    authApi
+      .me()
+      .then((res) => {
+        if (res.data) setAuth(res.data);
+      })
+      .catch(() => clearAuth())
+      .finally(() => setLoading(false));
+  }, []); // Run once on mount; store actions from getState() are stable
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
@@ -75,6 +108,14 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
       <Toaster richColors position="top-right" />
     </BrowserRouter>
   );

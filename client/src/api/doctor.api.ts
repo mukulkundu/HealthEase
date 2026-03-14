@@ -1,29 +1,29 @@
 import client from "./client";
-import type { DoctorProfile } from "../types";
+import type { ApiResponse, DoctorProfile } from "../types";
 
 export const doctorApi = {
-  // Public — list all approved doctors, optional filters
   getAll: async (params?: {
     specialization?: string;
     name?: string;
   }): Promise<DoctorProfile[]> => {
-    const res = await client.get("/doctors", { params });
-    return res.data;
+    const res = await client.get<ApiResponse<DoctorProfile[]>>("/doctors", { params });
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   },
 
-  // Public — single doctor profile
-  getById: async (id: string): Promise<DoctorProfile> => {
-    const res = await client.get(`/doctors/${id}`);
-    return res.data;
+  getById: async (id: string): Promise<DoctorProfile | null> => {
+    const res = await client.get<ApiResponse<DoctorProfile>>(`/doctors/${id}`);
+    return res.data?.data ?? null;
   },
 
-  // Doctor — get own full profile
-  getMyProfile: async (): Promise<DoctorProfile> => {
-    const res = await client.get("/doctors/profile/me");
-    return res.data;
+  getMyProfile: async (): Promise<DoctorProfile | null> => {
+    try {
+      const res = await client.get<ApiResponse<DoctorProfile>>("/doctors/profile/me");
+      return res.data?.data ?? null;
+    } catch {
+      return null;
+    }
   },
 
-  // Doctor — create profile (first time setup)
   createProfile: async (data: {
     specialization: string;
     experience: number;
@@ -33,11 +33,10 @@ export const doctorApi = {
     bio?: string;
     avatarUrl?: string;
   }): Promise<DoctorProfile> => {
-    const res = await client.post("/doctors/profile", data);
-    return res.data;
+    const res = await client.post<ApiResponse<DoctorProfile>>("/doctors/profile", data);
+    return res.data.data;
   },
 
-  // Doctor — update own profile
   updateProfile: async (data: Partial<{
     specialization: string;
     experience: number;
@@ -47,7 +46,7 @@ export const doctorApi = {
     bio: string;
     avatarUrl: string;
   }>): Promise<DoctorProfile> => {
-    const res = await client.put("/doctors/profile", data);
-    return res.data;
+    const res = await client.put<ApiResponse<DoctorProfile>>("/doctors/profile", data);
+    return res.data.data;
   },
 };

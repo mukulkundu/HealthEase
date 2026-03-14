@@ -14,7 +14,7 @@ import {
 import { toast } from "sonner";
 import type { Appointment, DoctorProfile, AppointmentStatus } from "../../types";
 
-export default function DoctorDashboard() {
+function DoctorDashboard() {
   const { user } = useAuthStore();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
@@ -23,10 +23,13 @@ export default function DoctorDashboard() {
   useEffect(() => {
     Promise.all([
       appointmentApi.getDoctorAppointments(),
-      doctorApi.getMyProfile().catch(() => null),
+      doctorApi.getMyProfile(),
     ]).then(([appts, prof]) => {
-      setAppointments(appts);
-      setProfile(prof);
+      setAppointments(Array.isArray(appts) ? appts : []);
+      setProfile(prof ?? null);
+    }).catch(() => {
+      setAppointments([]);
+      setProfile(null);
     }).finally(() => setLoading(false));
   }, []);
 
@@ -55,13 +58,14 @@ export default function DoctorDashboard() {
   };
 
   const today = new Date().toDateString();
-  const todayAppts = appointments.filter(
+  const apptList = Array.isArray(appointments) ? appointments : [];
+  const todayAppts = apptList.filter(
     (a) =>
       new Date(a.date).toDateString() === today &&
       (a.status === "PENDING" || a.status === "CONFIRMED")
   );
-  const pending = appointments.filter((a) => a.status === "PENDING");
-  const totalPatients = new Set(appointments.map((a) => a.patientId)).size;
+  const pending = apptList.filter((a) => a.status === "PENDING");
+  const totalPatients = new Set(apptList.map((a) => a.patientId)).size;
 
   return (
     <DashboardLayout>
@@ -94,7 +98,7 @@ export default function DoctorDashboard() {
               </p>
             </div>
             <Button size="sm" variant="outline" asChild>
-              <Link to="/doctor/dashboard">Set Up Profile</Link>
+              <Link to="/doctor/schedule">Manage Schedule</Link>
             </Button>
           </div>
         )}
@@ -184,3 +188,5 @@ export default function DoctorDashboard() {
     </DashboardLayout>
   );
 }
+
+export default DoctorDashboard;

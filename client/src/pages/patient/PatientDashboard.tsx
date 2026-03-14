@@ -16,11 +16,13 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     appointmentApi.getMyAppointments()
-      .then(setAppointments)
+      .then((data) => setAppointments(Array.isArray(data) ? data : []))
+      .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
   }, []);
 
-  const upcoming = appointments.filter(
+  const list = Array.isArray(appointments) ? appointments : [];
+  const upcoming = list.filter(
     (a) => a.status === "PENDING" || a.status === "CONFIRMED"
   );
 
@@ -45,7 +47,7 @@ export default function PatientDashboard() {
                 <CalendarCheck className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{upcoming.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{upcoming?.length ?? 0}</p>
                 <p className="text-xs text-gray-500">Upcoming</p>
               </div>
             </CardContent>
@@ -57,7 +59,7 @@ export default function PatientDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {appointments.filter((a) => a.status === "COMPLETED").length}
+                  {list.filter((a) => a.status === "COMPLETED").length}
                 </p>
                 <p className="text-xs text-gray-500">Completed</p>
               </div>
@@ -70,7 +72,7 @@ export default function PatientDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">
-                  {appointments.length}
+                  {list.length}
                 </p>
                 <p className="text-xs text-gray-500">Total Visits</p>
               </div>
@@ -99,7 +101,7 @@ export default function PatientDashboard() {
             <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading...
             </div>
-          ) : upcoming.length === 0 ? (
+          ) : !upcoming?.length ? (
             <div className="rounded-lg border bg-gray-50 py-10 text-center">
               <CalendarCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
               <p className="text-sm text-gray-500">No upcoming appointments</p>
@@ -109,7 +111,7 @@ export default function PatientDashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {upcoming.slice(0, 3).map((appt) => (
+              {(upcoming ?? []).slice(0, 3).map((appt) => (
                 <AppointmentCard
                   key={appt.id}
                   appointment={appt}
@@ -124,7 +126,7 @@ export default function PatientDashboard() {
                   }}
                 />
               ))}
-              {upcoming.length > 3 && (
+              {(upcoming?.length ?? 0) > 3 && (
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/appointments">View all {upcoming.length} →</Link>
                 </Button>

@@ -45,7 +45,8 @@ export default function SlotPicker({
     }
   };
 
-  const availableSlots = slots.filter((s) => s.available);
+  const slotList = Array.isArray(slots) ? slots : [];
+  const availableSlots = slotList.filter((s) => s?.available);
 
   return (
     <div className="space-y-4">
@@ -79,7 +80,13 @@ export default function SlotPicker({
 
         {!loading && !error && availableSlots.length === 0 && (
           <p className="text-sm text-gray-500 py-2">
-            No available slots for this date.
+            No schedule set for this day, or no slots available.
+          </p>
+        )}
+
+        {!loading && !error && availableSlots.length > 0 && (
+          <p className="text-xs text-gray-500 mb-2">
+            {availableSlots.length} slot{availableSlots.length !== 1 ? "s" : ""} available
           </p>
         )}
 

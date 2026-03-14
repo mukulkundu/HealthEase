@@ -11,11 +11,13 @@ interface Props {
 }
 
 export default function DoctorCard({ doctor }: Props) {
-  const initials = doctor.user.name
+  const name = doctor.user?.name ?? "Doctor";
+  const initials = name
     .split(" ")
     .map((n) => n[0])
     .join("")
-    .toUpperCase();
+    .toUpperCase()
+    .slice(0, 2) || "?";
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -23,7 +25,7 @@ export default function DoctorCard({ doctor }: Props) {
         <div className="flex items-start gap-4">
           {/* Avatar */}
           <Avatar className="h-14 w-14 shrink-0">
-            <AvatarImage src={doctor.avatarUrl} alt={doctor.user.name} />
+            <AvatarImage src={doctor.avatarUrl} alt={name} />
             <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold text-lg">
               {initials}
             </AvatarFallback>
@@ -34,7 +36,7 @@ export default function DoctorCard({ doctor }: Props) {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h3 className="font-semibold text-gray-900 truncate">
-                  Dr. {doctor.user.name}
+                  Dr. {name}
                 </h3>
                 <p className="text-sm text-blue-600 font-medium">
                   {doctor.specialization}
@@ -44,7 +46,7 @@ export default function DoctorCard({ doctor }: Props) {
               <div className="flex items-center gap-1 shrink-0">
                 <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm font-medium text-gray-700">
-                  {doctor.rating > 0 ? doctor.rating.toFixed(1) : "New"}
+                  {doctor.rating != null && doctor.rating > 0 ? doctor.rating.toFixed(1) : "New"}
                 </span>
               </div>
             </div>

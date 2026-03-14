@@ -42,13 +42,17 @@ export default function ManageSchedulePage() {
   });
 
   useEffect(() => {
-    Promise.all([
-      doctorApi.getMyProfile().catch(() => null),
-    ]).then(([prof]) => {
-      setProfile(prof);
-      if (prof) {
-        return scheduleApi.getByDoctor(prof.id).then(setSchedules);
+    doctorApi.getMyProfile().then((prof) => {
+      setProfile(prof ?? null);
+      if (prof?.id) {
+        return scheduleApi.getByDoctor(prof.id).then((data) =>
+          setSchedules(Array.isArray(data) ? data : [])
+        );
       }
+      setSchedules([]);
+    }).catch(() => {
+      setProfile(null);
+      setSchedules([]);
     }).finally(() => setLoading(false));
   }, []);
 

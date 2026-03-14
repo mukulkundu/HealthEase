@@ -25,8 +25,12 @@ export default function DoctorProfilePage() {
     if (!id) return;
     Promise.all([doctorApi.getById(id), scheduleApi.getByDoctor(id)])
       .then(([doc, sch]) => {
-        setDoctor(doc);
-        setSchedules(sch.sort((a, b) => DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek)));
+        setDoctor(doc ?? null);
+        setSchedules(Array.isArray(sch) ? sch.sort((a, b) => DAY_ORDER.indexOf(a.dayOfWeek) - DAY_ORDER.indexOf(b.dayOfWeek)) : []);
+      })
+      .catch(() => {
+        setDoctor(null);
+        setSchedules([]);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -51,7 +55,7 @@ export default function DoctorProfilePage() {
     );
   }
 
-  const initials = doctor.user.name.split(" ").map((n) => n[0]).join("").toUpperCase();
+  const initials = doctor.user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() ?? "?";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,7 +67,7 @@ export default function DoctorProfilePage() {
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-6 items-start">
               <Avatar className="h-24 w-24 shrink-0">
-                <AvatarImage src={doctor.avatarUrl} alt={doctor.user.name} />
+                <AvatarImage src={doctor.avatarUrl} alt={doctor.user?.name ?? "Doctor"} />
                 <AvatarFallback className="bg-blue-100 text-blue-700 text-2xl font-bold">
                   {initials}
                 </AvatarFallback>
@@ -72,7 +76,7 @@ export default function DoctorProfilePage() {
               <div className="flex-1 space-y-3">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">
-                    Dr. {doctor.user.name}
+                    Dr. {doctor.user?.name ?? "Doctor"}
                   </h1>
                   <p className="text-blue-600 font-medium">{doctor.specialization}</p>
                 </div>

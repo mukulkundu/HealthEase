@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  phone         String?
+  role          Role      @default(PATIENT)
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  doctorProfile DoctorProfile?
+  appointments  Appointment[]  @relation("PatientAppointments")
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model DoctorProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization  String
+  experience      Int
+  qualifications  String[]
+  languages       String[]
+  consultationFee Float
+  bio             String?
+  avatarUrl       String?
+  rating          Float    @default(0)
+  totalReviews    Int      @default(0)
+  isIndependent   Boolean  @default(true)
+  isApproved      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  schedules    Schedule[]
+  appointments Appointment[]
+}
+
+model Schedule {
+  id            String        @id @default(cuid())
+  doctorId      String
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  dayOfWeek     DayOfWeek
+  startTime     String
+  endTime       String
+  slotDuration  Int
+  bufferTime    Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([doctorId, dayOfWeek])
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  patientId String
+  patient   User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctorId  String
+  doctor    DoctorProfile     @relation(fields: [doctorId], references: [id])
+  date      DateTime
+  startTime String
+  endTime   String
+  status    AppointmentStatus @default(PENDING)
+  notes     String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@unique([doctorId, date, startTime])
+}

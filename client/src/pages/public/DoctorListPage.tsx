@@ -33,7 +33,7 @@ export default function DoctorListPage() {
         specialization: activeSpec || undefined,
         name: nameSearch || undefined,
       });
-      setDoctors(data);
+      setDoctors(Array.isArray(data) ? data : []);
     } catch {
       setDoctors([]);
     } finally {

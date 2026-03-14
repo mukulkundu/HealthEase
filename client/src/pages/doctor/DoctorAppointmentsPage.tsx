@@ -13,7 +13,8 @@ export default function DoctorAppointmentsPage() {
 
   useEffect(() => {
     appointmentApi.getDoctorAppointments()
-      .then(setAppointments)
+      .then((data) => setAppointments(Array.isArray(data) ? data : []))
+      .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,10 +42,11 @@ export default function DoctorAppointmentsPage() {
     }
   };
 
-  const pending = appointments.filter((a) => a.status === "PENDING");
-  const confirmed = appointments.filter((a) => a.status === "CONFIRMED");
-  const completed = appointments.filter((a) => a.status === "COMPLETED");
-  const cancelled = appointments.filter((a) => a.status === "CANCELLED");
+  const list = Array.isArray(appointments) ? appointments : [];
+  const pending = list.filter((a) => a.status === "PENDING");
+  const confirmed = list.filter((a) => a.status === "CONFIRMED");
+  const completed = list.filter((a) => a.status === "COMPLETED");
+  const cancelled = list.filter((a) => a.status === "CANCELLED");
 
   const EmptyState = () => (
     <div className="rounded-lg border bg-gray-50 py-12 text-center">

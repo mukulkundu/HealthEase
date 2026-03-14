@@ -80,6 +80,13 @@ export interface AuthResponse {
   refreshToken: string;
 }
 
+/** Backend success response shape: { success, message, data } */
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 export interface ApiError {
   message: string;
   status?: number;

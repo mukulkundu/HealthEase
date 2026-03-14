@@ -15,7 +15,8 @@ export default function MyAppointmentsPage() {
 
   useEffect(() => {
     appointmentApi.getMyAppointments()
-      .then(setAppointments)
+      .then((data) => setAppointments(Array.isArray(data) ? data : []))
+      .catch(() => setAppointments([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,13 +32,14 @@ export default function MyAppointmentsPage() {
     }
   };
 
-  const upcoming = appointments.filter(
+  const list = Array.isArray(appointments) ? appointments : [];
+  const upcoming = list.filter(
     (a) => a.status === "PENDING" || a.status === "CONFIRMED"
   );
-  const past = appointments.filter(
+  const past = list.filter(
     (a) => a.status === "COMPLETED" || a.status === "NO_SHOW"
   );
-  const cancelled = appointments.filter((a) => a.status === "CANCELLED");
+  const cancelled = list.filter((a) => a.status === "CANCELLED");
 
   const EmptyState = ({ message }: { message: string }) => (
     <div className="rounded-lg border bg-gray-50 py-12 text-center">

@@ -1,5 +1,10 @@
 import client from "./client";
-import type { AuthResponse, User } from "../types";
+import type { ApiResponse, User } from "../types";
+
+/** Response shape when backend returns only { user } (cookie-based auth) */
+export interface AuthUserResponse {
+  user: User;
+}
 
 export const authApi = {
   register: async (data: {
@@ -7,30 +12,30 @@ export const authApi = {
     email: string;
     password: string;
     role: "PATIENT" | "DOCTOR";
-  }): Promise<AuthResponse> => {
-    const res = await client.post("/auth/register", data);
+  }): Promise<ApiResponse<AuthUserResponse>> => {
+    const res = await client.post<ApiResponse<AuthUserResponse>>("/auth/register", data);
     return res.data;
   },
 
   login: async (data: {
     email: string;
     password: string;
-  }): Promise<AuthResponse> => {
-    const res = await client.post("/auth/login", data);
+  }): Promise<ApiResponse<AuthUserResponse>> => {
+    const res = await client.post<ApiResponse<AuthUserResponse>>("/auth/login", data);
     return res.data;
   },
 
-  logout: async (refreshToken: string): Promise<void> => {
-    await client.post("/auth/logout", { refreshToken });
+  logout: async (): Promise<void> => {
+    await client.post("/auth/logout");
   },
 
-  refresh: async (refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> => {
-    const res = await client.post("/auth/refresh", { refreshToken });
+  refresh: async (): Promise<ApiResponse<AuthUserResponse>> => {
+    const res = await client.post<ApiResponse<AuthUserResponse>>("/auth/refresh");
     return res.data;
   },
 
-  me: async (): Promise<User> => {
-    const res = await client.get("/auth/me");
+  me: async (): Promise<ApiResponse<User>> => {
+    const res = await client.get<ApiResponse<User>>("/auth/me");
     return res.data;
   },
 };

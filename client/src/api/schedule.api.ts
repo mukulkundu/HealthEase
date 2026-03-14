@@ -1,25 +1,22 @@
 import client from "./client";
-import type { Schedule, TimeSlot, DayOfWeek } from "../types";
+import type { ApiResponse, Schedule, TimeSlot, DayOfWeek } from "../types";
 
 export const scheduleApi = {
-  // Public — get all schedules for a doctor
   getByDoctor: async (doctorId: string): Promise<Schedule[]> => {
-    const res = await client.get(`/schedules/${doctorId}`);
-    return res.data;
+    const res = await client.get<ApiResponse<Schedule[]>>(`/schedules/${doctorId}`);
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   },
 
-  // Public — get available slots for a doctor on a specific date
   getAvailableSlots: async (
     doctorId: string,
-    date: string // "YYYY-MM-DD"
+    date: string
   ): Promise<TimeSlot[]> => {
-    const res = await client.get(`/schedules/${doctorId}/slots`, {
+    const res = await client.get<ApiResponse<TimeSlot[]>>(`/schedules/${doctorId}/slots`, {
       params: { date },
     });
-    return res.data;
+    return Array.isArray(res.data?.data) ? res.data.data : [];
   },
 
-  // Doctor — create or update a schedule for a day
   upsert: async (data: {
     dayOfWeek: DayOfWeek;
     startTime: string;
@@ -27,11 +24,10 @@ export const scheduleApi = {
     slotDuration: number;
     bufferTime?: number;
   }): Promise<Schedule> => {
-    const res = await client.post("/schedules", data);
-    return res.data;
+    const res = await client.post<ApiResponse<Schedule>>("/schedules", data);
+    return res.data.data;
   },
 
-  // Doctor — delete a schedule day
   delete: async (scheduleId: string): Promise<void> => {
     await client.delete(`/schedules/${scheduleId}`);
   },

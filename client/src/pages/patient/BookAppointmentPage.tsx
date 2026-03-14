@@ -51,9 +51,10 @@ export default function BookAppointmentPage() {
       });
       toast.success("Appointment booked successfully!");
       navigate("/appointments");
-    } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      if (err?.response?.status === 409) {
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      if (status === 409) {
         toast.error("This slot was just taken. Please choose another.");
       } else {
         toast.error(msg || "Booking failed. Please try again.");
@@ -81,7 +82,7 @@ export default function BookAppointmentPage() {
     );
   }
 
-  const initials = doctor.user.name.split(" ").map((n) => n[0]).join("").toUpperCase();
+  const initials = doctor.user?.name?.split(" ").map((n) => n[0]).join("").toUpperCase() ?? "?";
 
   return (
     <DashboardLayout>
@@ -101,7 +102,7 @@ export default function BookAppointmentPage() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900">Dr. {doctor.user.name}</p>
+              <p className="font-semibold text-gray-900">Dr. {doctor.user?.name ?? "Doctor"}</p>
               <p className="text-sm text-blue-600">{doctor.specialization}</p>
               <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
                 <span className="flex items-center gap-1">

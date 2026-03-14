@@ -30,10 +30,11 @@ export default function AppointmentCard({
 
   const displayName =
     role === "PATIENT"
-      ? `Dr. ${appointment.doctor?.user.name ?? "—"}`
+      ? `Dr. ${appointment.doctor?.user?.name ?? "—"}`
       : appointment.patient?.name ?? "—";
 
-  const formattedDate = new Date(appointment.date).toLocaleDateString("en-IN", {
+  const dateStr = typeof appointment.date === "string" ? appointment.date : String(appointment.date);
+  const formattedDate = new Date(dateStr).toLocaleDateString("en-IN", {
     weekday: "short",
     year: "numeric",
     month: "short",
