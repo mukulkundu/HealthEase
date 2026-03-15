@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 import { doctorApi } from "../../api/doctor.api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface FormData {
@@ -39,6 +40,7 @@ export default function SetupProfilePage() {
 
   const bioValue = watch("bio") ?? "";
   const [saving, setSaving] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const addQualification = () => {
     const v = qualInput.trim();
@@ -84,8 +86,8 @@ export default function SetupProfilePage() {
         bio: data.bio?.trim() || undefined,
         avatarUrl: data.avatarUrl?.trim() || undefined,
       });
-      toast.success("Profile created successfully");
-      navigate("/doctor/dashboard");
+      toast.success("Profile created! You are now visible to patients.");
+      setShowSuccess(true);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || "Failed to create profile");
@@ -93,6 +95,37 @@ export default function SetupProfilePage() {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    const t = setTimeout(() => navigate("/doctor/dashboard"), 3000);
+    return () => clearTimeout(t);
+  }, [showSuccess, navigate]);
+
+  if (showSuccess) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+          <div className="rounded-full bg-green-100 p-6 mb-4">
+            <CheckCircle2 className="h-16 w-16 text-green-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">You're all set!</h1>
+          <p className="text-gray-600 mt-2 max-w-sm">
+            Your profile is now live on HealthEase. Patients can discover and book appointments with you.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center mt-6">
+            <Button size="lg" asChild>
+              <Link to="/doctor/dashboard">Go to Dashboard</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link to="/doctor/schedule">Set Up Your Schedule</Link>
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">Redirecting to dashboard in 3 seconds...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

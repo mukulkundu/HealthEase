@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Stethoscope, Loader2, User, Briefcase } from "lucide-react";
+import { Stethoscope, Loader2, User } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -54,29 +54,39 @@ export default function RegisterPage() {
                 type="button"
                 onClick={() => setRole("PATIENT")}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all",
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all text-left",
                   role === "PATIENT"
                     ? "border-blue-600 bg-blue-50 text-blue-700"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
                 )}
               >
-                <User className="h-5 w-5" />
-                I'm a Patient
+                <User className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">I'm a Patient</span>
+                <span className="text-xs font-normal text-gray-500">Book appointments with doctors</span>
               </button>
               <button
                 type="button"
                 onClick={() => setRole("DOCTOR")}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all",
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all text-left",
                   role === "DOCTOR"
                     ? "border-blue-600 bg-blue-50 text-blue-700"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
                 )}
               >
-                <Briefcase className="h-5 w-5" />
-                I'm a Doctor
+                <Stethoscope className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">I'm a Doctor</span>
+                <span className="text-xs font-normal text-gray-500">Manage your practice and patients</span>
               </button>
             </div>
+
+            {role === "DOCTOR" && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 mb-4 text-sm text-gray-700 space-y-1">
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Your profile goes live immediately after setup</p>
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Set your own schedule and fees</p>
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> No approval required</p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">

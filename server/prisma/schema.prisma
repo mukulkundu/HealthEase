@@ -9,7 +9,6 @@ datasource db {
 enum Role {
   PATIENT
   DOCTOR
-  ADMIN
 }
 
 enum AppointmentStatus {
@@ -69,7 +68,6 @@ model DoctorProfile {
   rating          Float    @default(0)
   totalReviews    Int      @default(0)
   isIndependent   Boolean  @default(true)
-  isApproved      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

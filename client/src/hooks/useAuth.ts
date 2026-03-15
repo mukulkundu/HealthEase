@@ -82,7 +82,6 @@ export function useAuth() {
 function getRoleHome(role: Role): string {
   switch (role) {
     case "DOCTOR": return "/doctor/dashboard";
-    case "ADMIN": return "/admin";
     default: return "/dashboard";
   }
 }

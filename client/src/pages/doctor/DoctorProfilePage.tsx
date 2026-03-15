@@ -179,16 +179,6 @@ export default function DoctorProfilePage() {
               <div className="flex-1 space-y-2">
                 <h2 className="text-xl font-bold text-gray-900">Dr. {name}</h2>
                 <p className="text-blue-600 font-medium">{profile.specialization}</p>
-                {profile.isApproved ? (
-                  <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
-                ) : (
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                    Pending Approval
-                  </Badge>
-                )}
-                {!profile.isApproved && (
-                  <p className="text-sm text-gray-500">Your profile is under review</p>
-                )}
               </div>
             </div>
 

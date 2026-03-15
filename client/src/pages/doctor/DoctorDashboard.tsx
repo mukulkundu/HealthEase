@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { appointmentApi } from "../../api/appointment.api";
 import { doctorApi } from "../../api/doctor.api";
+import { scheduleApi } from "../../api/schedule.api";
 import { useAuthStore } from "../../store/authStore";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import AppointmentCard from "../../components/shared/AppointmentCard";
@@ -11,33 +12,64 @@ import {
   CalendarCheck,
   Clock,
   Users,
-  AlertCircle,
   Loader2,
   Settings,
   Stethoscope,
   Pencil,
   Calendar,
+  CheckCircle2,
+  Circle,
+  ExternalLink,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Appointment, DoctorProfile, AppointmentStatus } from "../../types";
+
+const LIVE_BANNER_KEY = "healthease_live_banner_dismissed";
 
 function DoctorDashboard() {
   const { user } = useAuthStore();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
+  const [schedules, setSchedules] = useState<{ id: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [liveBannerDismissed, setLiveBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem(LIVE_BANNER_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
-    Promise.all([appointmentApi.getDoctorAppointments(), doctorApi.getMyProfile()])
-      .then(([appts, prof]) => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [appts, prof] = await Promise.all([
+          appointmentApi.getDoctorAppointments(),
+          doctorApi.getMyProfile(),
+        ]);
+        if (cancelled) return;
         setAppointments(Array.isArray(appts) ? appts : []);
-        setProfile(prof ?? null);
-      })
-      .catch(() => {
-        setAppointments([]);
-        setProfile(null);
-      })
-      .finally(() => setLoading(false));
+        const p = prof ?? null;
+        setProfile(p);
+        if (p?.id) {
+          const s = await scheduleApi.getByDoctor(p.id);
+          if (!cancelled) setSchedules(Array.isArray(s) ? s : []);
+        } else {
+          setSchedules([]);
+        }
+      } catch {
+        if (!cancelled) {
+          setAppointments([]);
+          setProfile(null);
+          setSchedules([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleStatusChange = async (id: string, status: AppointmentStatus) => {
@@ -94,10 +126,69 @@ function DoctorDashboard() {
     );
   }
 
-  // STATE 2 & 3 — Profile exists (with or without approval)
+  const hasSchedule = schedules.length > 0;
+  const showLiveBanner = profile && !liveBannerDismissed;
+  const showChecklist = profile && !hasSchedule;
+
+  const dismissLiveBanner = () => {
+    try {
+      localStorage.setItem(LIVE_BANNER_KEY, "true");
+    } catch {}
+    setLiveBannerDismissed(true);
+  };
+
+  // STATE 2 — Profile exists
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl">
+        {showLiveBanner && (
+          <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-800">
+                Your profile is live! Patients can now discover and book appointments with you.
+              </p>
+              <Link
+                to={profile ? `/doctors/${profile.id}` : "/doctors"}
+                className="text-sm text-green-700 underline font-medium mt-1 inline-flex items-center gap-1"
+              >
+                View your public profile <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={dismissLiveBanner}
+              className="shrink-0 p-1 rounded hover:bg-green-100 text-green-700"
+              aria-label="Dismiss"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {showChecklist && (
+          <Card>
+            <CardContent className="p-5">
+              <h3 className="font-semibold text-gray-900 mb-3">Complete your setup</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-3 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                  <span className="text-gray-600">Create profile</span>
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <Link to="/doctor/schedule" className="flex items-center gap-3 text-blue-600 hover:underline w-full">
+                    <Circle className="h-4 w-4 shrink-0 border-2 border-gray-300 rounded-full" />
+                    <span>Set your weekly schedule</span>
+                  </Link>
+                </li>
+                <li className="flex items-center gap-3 text-sm text-gray-500">
+                  <Circle className="h-4 w-4 shrink-0 border-2 border-gray-300 rounded-full" />
+                  <span>Your first booking will appear here</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -118,15 +209,6 @@ function DoctorDashboard() {
             </Button>
           </div>
         </div>
-
-        {profile && !profile.isApproved && (
-          <div className="flex items-center gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <AlertCircle className="h-5 w-5 text-yellow-600 shrink-0" />
-            <p className="text-sm text-yellow-800">
-              Your profile is pending admin approval. You won't appear in public listings until approved.
-            </p>
-          </div>
-        )}
 
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-gray-500 py-8">

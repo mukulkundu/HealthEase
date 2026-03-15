@@ -1,4 +1,4 @@
-export type Role = "PATIENT" | "DOCTOR" | "ADMIN";
+export type Role = "PATIENT" | "DOCTOR";
 
 export type AppointmentStatus =
   | "PENDING"
@@ -39,7 +39,6 @@ export interface DoctorProfile {
   rating: number;
   totalReviews: number;
   isIndependent: boolean;
-  isApproved: boolean;
   user: Pick<User, "id" | "name" | "email" | "phone">;
 }
 

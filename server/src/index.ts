@@ -37,8 +37,12 @@ app.use(cookieParser());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: "Too many requests, please try again later.",
+  // Allow auth endpoints to stay responsive even if the app is refreshed often
+  skip: (req) => req.path.startsWith("/auth"),
 });
 app.use("/api", limiter);
 

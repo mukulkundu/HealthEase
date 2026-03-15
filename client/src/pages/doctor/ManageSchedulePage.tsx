@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, AlertCircle, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import type { Schedule, DayOfWeek, DoctorProfile } from "../../types";
@@ -150,6 +150,19 @@ export default function ManageSchedulePage() {
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-gray-500 py-8">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          </div>
+        ) : profile && schedules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 rounded-xl border border-dashed bg-gray-50 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-200 text-gray-500 mb-4">
+              <Calendar className="h-7 w-7" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">No schedule set yet</h3>
+            <p className="text-sm text-gray-500 mb-6 max-w-sm">
+              Set your availability so patients can book appointments with you
+            </p>
+            <Button onClick={() => openDialog("MONDAY")}>
+              <Plus className="mr-2 h-4 w-4" /> Add your first schedule
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

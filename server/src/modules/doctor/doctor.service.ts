@@ -7,7 +7,6 @@ export const getAllDoctors = async (filters: {
 }) => {
   const doctors = await db.doctorProfile.findMany({
     where: {
-      isApproved: true,
       ...(filters.specialization && {
         specialization: {
           contains: filters.specialization,

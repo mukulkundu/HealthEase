@@ -66,6 +66,18 @@ export default function PatientDashboard() {
           <p className="text-gray-500 mt-1">Here's your health overview</p>
         </div>
 
+        {!loading && list.length === 0 && (
+          <Card className="border-blue-200 bg-blue-50/30">
+            <CardContent className="p-6 text-center">
+              <h3 className="font-semibold text-gray-900 mb-1">Welcome to HealthEase!</h3>
+              <p className="text-sm text-gray-600 mb-4">You're all set. Find a doctor and book your first appointment.</p>
+              <Button asChild>
+                <Link to="/doctors">Browse Doctors</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
