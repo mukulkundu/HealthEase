@@ -16,6 +16,8 @@ export type DayOfWeek =
   | "SATURDAY"
   | "SUNDAY";
 
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED";
+
 export interface User {
   id: string;
   email: string;
@@ -69,8 +71,23 @@ export interface Appointment {
   status: AppointmentStatus;
   notes?: string;
   createdAt: string;
+  isPaid: boolean;
   patient?: Pick<User, "id" | "name" | "email" | "phone">;
   doctor?: DoctorProfile;
+  payment?: Payment;
+}
+
+export interface Payment {
+  id: string;
+  appointmentId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+  amount: number; // paise
+  currency: string;
+  status: PaymentStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { doctorApi } from "../../api/doctor.api";
-import { appointmentApi } from "../../api/appointment.api";
+import { paymentApi } from "../../api/payment.api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import SlotPicker from "../../components/shared/SlotPicker";
 import { Button } from "@/components/ui/button";
@@ -46,15 +46,64 @@ export default function BookAppointmentPage() {
     }
     setBooking(true);
     try {
-      await appointmentApi.book({
+      const order = await paymentApi.createOrder({
         doctorId,
         date: selectedDate,
         startTime: selectedSlot.startTime,
         endTime: selectedSlot.endTime,
         notes: notes.trim() || undefined,
       });
-      toast.success("Appointment booked successfully!");
-      navigate("/appointments");
+
+      // Mock mode: key is optional; use dummy so mock confirm dialog runs
+      const key = (import.meta.env.VITE_RAZORPAY_KEY_ID as string | undefined) || "mock_key";
+
+      const amount = order.amount;
+
+      const { openRazorpayCheckout } = await import("../../utils/razorpay");
+
+      openRazorpayCheckout(
+        {
+          key,
+          amount,
+          currency: order.currency,
+          name: "HealthEase",
+          description: "Consultation fee",
+          orderId: order.orderId,
+        },
+        async ({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) => {
+          try {
+            await paymentApi.verify({
+              doctorId,
+              date: selectedDate,
+              startTime: selectedSlot.startTime,
+              endTime: selectedSlot.endTime,
+              notes: notes.trim() || undefined,
+              razorpayOrderId,
+              razorpayPaymentId,
+              razorpaySignature,
+              amount,
+              currency: order.currency,
+            });
+            toast.success("Payment successful! Appointment booked.");
+            navigate("/appointments");
+          } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status;
+            const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+            if (status === 409) {
+              toast.error("This slot was just taken. Please choose another.");
+              setStep(1);
+            } else {
+              toast.error(msg || "Payment verification failed. You have not been charged.");
+            }
+          } finally {
+            setBooking(false);
+          }
+        },
+        () => {
+          toast.error("Payment cancelled. Your appointment was not booked.");
+          setBooking(false);
+        }
+      );
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -62,9 +111,8 @@ export default function BookAppointmentPage() {
         toast.error("This slot was just taken. Please choose another.");
         setStep(1);
       } else {
-        toast.error(msg || "Booking failed. Please try again.");
+        toast.error(msg || "Could not start payment. Please try again.");
       }
-    } finally {
       setBooking(false);
     }
   };
@@ -209,6 +257,25 @@ export default function BookAppointmentPage() {
               <p className="text-xs text-gray-500">{notes.length}/{NOTES_MAX}</p>
             </div>
 
+            {import.meta.env.DEV && (
+              <Card className="border-dashed">
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold text-gray-800 mb-1">
+                    Razorpay Test Card (Sandbox only)
+                  </p>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Card: 4111 1111 1111 1111
+                  </p>
+                  <p className="text-xs text-gray-600 mb-1">
+                    Expiry: Any future date &nbsp;|&nbsp; CVV: 123
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    Use only in development with Razorpay test keys.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(1)}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -220,9 +287,11 @@ export default function BookAppointmentPage() {
                 disabled={booking}
               >
                 {booking ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Confirming...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing payment...</>
                 ) : (
-                  <><CalendarCheck className="mr-2 h-4 w-4" /> Confirm Appointment</>
+                  <>
+                    <CalendarCheck className="mr-2 h-4 w-4" /> Pay ₹{doctor.consultationFee} and Book
+                  </>
                 )}
               </Button>
             </div>

@@ -106,6 +106,18 @@ function DoctorDashboard() {
   const pending = apptList.filter((a) => a.status === "PENDING");
   const totalPatients = new Set(apptList.map((a) => a.patientId)).size;
 
+  const todayPaid = apptList.filter(
+    (a) =>
+      new Date(a.date).toDateString() === today &&
+      a.isPaid &&
+      a.payment?.status === "PAID"
+  );
+  const todayEarningsPaise = todayPaid.reduce(
+    (sum, a) => sum + (a.payment?.amount ?? 0),
+    0
+  );
+  const todayEarnings = todayEarningsPaise / 100;
+
   // STATE 1 — No profile
   if (!loading && !profile) {
     return (
@@ -247,6 +259,19 @@ function DoctorDashboard() {
                   <div>
                     <p className="text-2xl font-bold text-gray-900">{totalPatients}</p>
                     <p className="text-xs text-gray-500">Total Patients</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="col-span-2 sm:col-span-1">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                    <CalendarCheck className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ₹{todayEarnings.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-gray-500">Today's Earnings</p>
                   </div>
                 </CardContent>
               </Card>

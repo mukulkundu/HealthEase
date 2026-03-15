@@ -63,6 +63,7 @@ export const bookAppointment = async (
       patient: {
         select: { id: true, name: true, email: true, phone: true },
       },
+      payment: true,
     },
   });
 
@@ -80,6 +81,7 @@ export const getPatientAppointments = async (patientId: string) => {
           },
         },
       },
+      payment: true,
     },
     orderBy: { date: "desc" },
   });
@@ -95,6 +97,7 @@ export const getDoctorAppointments = async (userId: string) => {
       patient: {
         select: { id: true, name: true, email: true, phone: true },
       },
+      payment: true,
     },
     orderBy: { date: "desc" },
   });
@@ -138,6 +141,7 @@ export const cancelAppointment = async (userId: string, appointmentId: string) =
       patient: {
         select: { id: true, name: true, email: true, phone: true },
       },
+      payment: true,
     },
   });
 };
@@ -171,6 +175,7 @@ export const updateAppointmentStatus = async (
       patient: {
         select: { id: true, name: true, email: true, phone: true },
       },
+      payment: true,
     },
   });
 };

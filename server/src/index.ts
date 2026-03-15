@@ -11,6 +11,7 @@ import userRoutes from "./modules/user/user.routes.js";
 import doctorRoutes from "./modules/doctor/doctor.routes.js";
 import scheduleRoutes from "./modules/schedule/schedule.routes.js";
 import appointmentRoutes from "./modules/appointment/appointment.routes.js";
+import paymentRoutes from "./modules/payment/payment.routes.js";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Health check
 app.get("/health", (_req, res) => {

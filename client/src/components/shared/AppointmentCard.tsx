@@ -90,12 +90,24 @@ export default function AppointmentCard({
 
           {/* Right: status + actions */}
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <Badge
-              variant="outline"
-              className={`text-xs ${statusStyles[appointment.status]}`}
-            >
-              {appointment.status}
-            </Badge>
+            <div className="flex flex-wrap gap-1 justify-end">
+              <Badge
+                variant="outline"
+                className={`text-xs ${statusStyles[appointment.status]}`}
+              >
+                {appointment.status}
+              </Badge>
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${
+                  appointment.isPaid
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-gray-50 text-gray-600 border-gray-200"
+                }`}
+              >
+                {appointment.isPaid ? "Paid" : "Unpaid"}
+              </Badge>
+            </div>
 
             {/* Patient actions */}
             {role === "PATIENT" && isCancellable && onCancel && (

@@ -32,7 +32,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 bg-gradient-to-b from-blue-50 to-white">
+      <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20 bg-linear-to-b from-blue-50 to-white">
         <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 max-w-2xl leading-tight">
           Book Doctor Appointments Instantly
         </h1>
@@ -46,7 +46,7 @@ export default function LandingPage() {
             </Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link to="/register">Join as a Doctor</Link>
+            <Link to="/register">Register as a User</Link>
           </Button>
         </div>
       </section>

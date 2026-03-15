@@ -12,25 +12,13 @@ export const bookAppointment = async (
   next: NextFunction
 ) => {
   try {
-    const { doctorId, date, startTime, endTime, notes } = req.body;
-
-    if (!doctorId || !date || !startTime || !endTime) {
-      return sendError(res, "doctorId, date, startTime and endTime are required", 400);
-    }
-
-    if (!TIME_REGEX.test(startTime) || !TIME_REGEX.test(endTime)) {
-      return sendError(res, "startTime and endTime must be in HH:MM format", 400);
-    }
-
-    const appointment = await appointmentService.bookAppointment(req.user!.id, {
-      doctorId,
-      date,
-      startTime,
-      endTime,
-      notes,
-    });
-
-    return sendSuccess(res, appointment, "Appointment booked successfully", 201);
+    // Direct booking is no longer allowed; appointments are created only
+    // after successful payment verification via the payments module.
+    return sendError(
+      res,
+      "Direct booking is disabled. Please use the payment flow.",
+      400
+    );
   } catch (err) {
     next(err);
   }
