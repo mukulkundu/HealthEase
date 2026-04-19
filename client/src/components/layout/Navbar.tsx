@@ -21,6 +21,8 @@ export default function Navbar() {
   const getDashboardLink = () => {
     if (!user) return "/";
     if (user.role === "DOCTOR") return "/doctor/dashboard";
+    if (user.role === "HOSPITAL_ADMIN") return "/hospital/dashboard";
+    if (user.role === "RECEPTIONIST") return "/hospital/reception";
     return "/dashboard";
   };
 
@@ -47,6 +49,12 @@ export default function Navbar() {
               className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
             >
               Find Doctors
+            </Link>
+            <Link
+              to="/hospitals"
+              className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              Hospitals
             </Link>
 
             {isAuthenticated && (

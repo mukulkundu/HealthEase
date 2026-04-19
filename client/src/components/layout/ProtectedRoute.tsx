@@ -26,6 +26,8 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
   if (!allowedRoles.includes(user.role)) {
     switch (user.role) {
       case "DOCTOR": return <Navigate to="/doctor/dashboard" replace />;
+      case "HOSPITAL_ADMIN": return <Navigate to="/hospital/dashboard" replace />;
+      case "RECEPTIONIST": return <Navigate to="/hospital/reception" replace />;
       default: return <Navigate to="/dashboard" replace />;
     }
   }

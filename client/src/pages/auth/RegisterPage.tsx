@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Stethoscope, Loader2, User } from "lucide-react";
+import { Stethoscope, Loader2, User, Building2, ConciergeBell } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import type { Role } from "../../types";
 
 interface FormData {
   name: string;
@@ -18,7 +19,7 @@ interface FormData {
 
 export default function RegisterPage() {
   const { register: registerUser, loading } = useAuth();
-  const [role, setRole] = useState<"PATIENT" | "DOCTOR">("PATIENT");
+  const [role, setRole] = useState<Role>("PATIENT");
 
   const {
     register,
@@ -78,6 +79,34 @@ export default function RegisterPage() {
                 <span className="font-semibold">I'm a Doctor</span>
                 <span className="text-xs font-normal text-gray-500">Manage your practice and patients</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setRole("HOSPITAL_ADMIN")}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all text-left",
+                  role === "HOSPITAL_ADMIN"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                )}
+              >
+                <Building2 className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">Hospital Admin</span>
+                <span className="text-xs font-normal text-gray-500">Register and manage a hospital</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("RECEPTIONIST")}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 text-sm font-medium transition-all text-left",
+                  role === "RECEPTIONIST"
+                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                    : "border-gray-200 text-gray-600 hover:border-gray-300"
+                )}
+              >
+                <ConciergeBell className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">Receptionist</span>
+                <span className="text-xs font-normal text-gray-500">Manage hospital appointments</span>
+              </button>
             </div>
 
             {role === "DOCTOR" && (
@@ -85,6 +114,19 @@ export default function RegisterPage() {
                 <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Your profile goes live immediately after setup</p>
                 <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Set your own schedule and fees</p>
                 <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> No approval required</p>
+              </div>
+            )}
+            {role === "HOSPITAL_ADMIN" && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 mb-4 text-sm text-gray-700 space-y-1">
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Register your hospital after signup</p>
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Add departments and link doctors</p>
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Manage staff and appointments</p>
+              </div>
+            )}
+            {role === "RECEPTIONIST" && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3 mb-4 text-sm text-gray-700 space-y-1">
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> Join a hospital after signup</p>
+                <p className="flex items-center gap-1.5"><span className="text-green-600">✓</span> View and manage patient appointments</p>
               </div>
             )}
 
@@ -151,7 +193,7 @@ export default function RegisterPage() {
                 {loading ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...</>
                 ) : (
-                  `Create ${role === "DOCTOR" ? "Doctor" : "Patient"} Account`
+                  `Create ${role === "DOCTOR" ? "Doctor" : role === "HOSPITAL_ADMIN" ? "Hospital Admin" : role === "RECEPTIONIST" ? "Receptionist" : "Patient"} Account`
                 )}
               </Button>
             </form>

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { doctorApi } from "../../api/doctor.api";
 import { scheduleApi } from "../../api/schedule.api";
+import { reviewApi } from "../../api/review.api";
 import { useAuthStore } from "../../store/authStore";
 import Navbar from "../../components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import ReviewCard from "../../components/shared/ReviewCard";
+import StarRating from "../../components/shared/StarRating";
 import {
   Star,
   Clock,
@@ -17,7 +20,7 @@ import {
   Loader2,
   CalendarCheck,
 } from "lucide-react";
-import type { DoctorProfile, Schedule } from "../../types";
+import type { DoctorProfile, Schedule, Review } from "../../types";
 
 const DAY_ORDER = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
@@ -27,6 +30,11 @@ export default function DoctorProfilePage() {
   const [doctor, setDoctor] = useState<DoctorProfile | null>(null);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsTotal, setReviewsTotal] = useState(0);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -45,6 +53,32 @@ export default function DoctorProfilePage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const loadReviews = (page: number) => {
+    if (!id) return;
+    setReviewsLoading(true);
+    reviewApi
+      .getDoctorReviews(id, page)
+      .then((res) => {
+        if (page === 1) {
+          setReviews(Array.isArray(res.reviews) ? res.reviews : []);
+        } else {
+          setReviews((prev) => [
+            ...prev,
+            ...(Array.isArray(res.reviews) ? res.reviews : []),
+          ]);
+        }
+        setReviewsTotal(res.total);
+        setReviewsPage(res.page);
+        setReviewsTotalPages(res.totalPages);
+      })
+      .catch(() => {})
+      .finally(() => setReviewsLoading(false));
+  };
+
+  useEffect(() => {
+    if (!loading && id) loadReviews(1);
+  }, [loading, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -179,15 +213,46 @@ export default function DoctorProfilePage() {
         <Card>
           <CardContent className="p-6">
             <h2 className="font-semibold text-gray-900 mb-4">Patient Reviews</h2>
-            {doctor.totalReviews > 0 ? (
-              <p className="text-sm text-gray-600">
-                {doctor.rating.toFixed(1)} / 5 based on {doctor.totalReviews} review
-                {doctor.totalReviews !== 1 ? "s" : ""}
-              </p>
+
+            {doctor.totalReviews > 0 && (
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-4xl font-bold text-gray-900">
+                  {doctor.rating.toFixed(1)}
+                </span>
+                <div className="space-y-0.5">
+                  <StarRating readonly rating={doctor.rating} size="md" />
+                  <p className="text-sm text-gray-500">{reviewsTotal} review{reviewsTotal !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+            )}
+
+            {reviewsLoading && reviews.length === 0 ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading reviews...
+              </div>
+            ) : reviews.length === 0 ? (
+              <p className="text-sm text-gray-500">No reviews yet.</p>
             ) : (
-              <p className="text-sm text-gray-500">
-                No reviews yet. Be the first to review!
-              </p>
+              <div className="space-y-3">
+                {reviews.map((r) => (
+                  <ReviewCard key={r.id} review={r} />
+                ))}
+                {reviewsPage < reviewsTotalPages && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => loadReviews(reviewsPage + 1)}
+                    disabled={reviewsLoading}
+                  >
+                    {reviewsLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Load more"
+                    )}
+                  </Button>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>

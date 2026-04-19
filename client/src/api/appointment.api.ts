@@ -40,4 +40,13 @@ export const appointmentApi = {
     const res = await client.patch<ApiResponse<Appointment>>(`/appointments/${id}/status`, { status });
     return res.data.data;
   },
+
+  // Patient — reschedule an appointment
+  reschedule: async (
+    id: string,
+    data: { date: string; startTime: string; endTime: string }
+  ): Promise<Appointment> => {
+    const res = await client.patch<ApiResponse<Appointment>>(`/appointments/${id}/reschedule`, data);
+    return res.data.data;
+  },
 };

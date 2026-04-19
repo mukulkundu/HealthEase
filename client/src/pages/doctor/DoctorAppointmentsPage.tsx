@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { appointmentApi } from "../../api/appointment.api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import AppointmentCard from "../../components/shared/AppointmentCard";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import type { Appointment, AppointmentStatus } from "../../types";
 
 export default function DoctorAppointmentsPage() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -129,6 +131,7 @@ export default function DoctorAppointmentsPage() {
                 <AppointmentCard
                   key={a.id} appointment={a} role="DOCTOR"
                   onCancel={handleCancel} onStatusChange={handleStatusChange}
+                  onViewHistory={(pid) => navigate(`/doctor/patients/${pid}/history`)}
                 />
               ))}
             </TabsContent>
@@ -138,19 +141,26 @@ export default function DoctorAppointmentsPage() {
                 <AppointmentCard
                   key={a.id} appointment={a} role="DOCTOR"
                   onCancel={handleCancel} onStatusChange={handleStatusChange}
+                  onViewHistory={(pid) => navigate(`/doctor/patients/${pid}/history`)}
                 />
               ))}
             </TabsContent>
 
             <TabsContent value="completed" className="space-y-3">
               {completed.length === 0 ? <EmptyState /> : completed.map((a) => (
-                <AppointmentCard key={a.id} appointment={a} role="DOCTOR" />
+                <AppointmentCard
+                  key={a.id} appointment={a} role="DOCTOR"
+                  onViewHistory={(pid) => navigate(`/doctor/patients/${pid}/history`)}
+                />
               ))}
             </TabsContent>
 
             <TabsContent value="cancelled" className="space-y-3">
               {cancelled.length === 0 ? <EmptyState /> : cancelled.map((a) => (
-                <AppointmentCard key={a.id} appointment={a} role="DOCTOR" />
+                <AppointmentCard
+                  key={a.id} appointment={a} role="DOCTOR"
+                  onViewHistory={(pid) => navigate(`/doctor/patients/${pid}/history`)}
+                />
               ))}
             </TabsContent>
           </Tabs>

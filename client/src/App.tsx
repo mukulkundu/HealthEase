@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { useAuthStore } from "./store/authStore";
 import { authApi } from "./api/auth.api";
+import { useSocket } from "./hooks/useSocket";
 import type { Role } from "./types";
 
 // Ensure /auth/me is only called once per app load (avoids Strict Mode double-call and re-run loops)
@@ -29,6 +30,34 @@ import SetupProfilePage from "./pages/doctor/SetupProfilePage";
 import DoctorProfilePage from "./pages/doctor/DoctorProfilePage";
 import ManageSchedulePage from "./pages/doctor/ManageSchedulePage";
 import DoctorAppointmentsPage from "./pages/doctor/DoctorAppointmentsPage";
+import EarningsPage from "./pages/doctor/EarningsPage";
+import PatientHistoryPage from "./pages/doctor/PatientHistoryPage";
+
+// Chat pages
+import ConversationsPage from "./pages/chat/ConversationsPage";
+import ChatPage from "./pages/chat/ChatPage";
+
+// Hospital public pages
+import HospitalListPage from "./pages/public/HospitalListPage";
+import HospitalProfilePage from "./pages/public/HospitalProfilePage";
+
+// Hospital admin pages
+import HospitalDashboard from "./pages/hospital/HospitalDashboard";
+import SetupHospitalPage from "./pages/hospital/SetupHospitalPage";
+import ManageDepartmentsPage from "./pages/hospital/ManageDepartmentsPage";
+import ManageStaffPage from "./pages/hospital/ManageStaffPage";
+import HospitalAppointmentsPage from "./pages/hospital/HospitalAppointmentsPage";
+
+// Receptionist pages
+import ReceptionDashboard from "./pages/hospital/ReceptionDashboard";
+
+// Doctor hospital pages
+import MyHospitalsPage from "./pages/doctor/MyHospitalsPage";
+import DoctorHospitalAppointmentsPage from "./pages/doctor/DoctorHospitalAppointmentsPage";
+
+// Patient hospital pages
+import MyHospitalAppointmentsPage from "./pages/patient/MyHospitalAppointmentsPage";
+import HospitalBookingPage from "./pages/patient/HospitalBookingPage";
 
 // Layout
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -36,6 +65,7 @@ import { Loader2 } from "lucide-react";
 
 function AppContent() {
   const isLoading = useAuthStore((s) => s.isLoading);
+  useSocket();
 
   useEffect(() => {
     if (initialAuthCheckDone) {
@@ -69,6 +99,8 @@ function AppContent() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/doctors" element={<DoctorListPage />} />
         <Route path="/doctors/:id" element={<PublicDoctorProfilePage />} />
+        <Route path="/hospitals" element={<HospitalListPage />} />
+        <Route path="/hospitals/:id" element={<HospitalProfilePage />} />
 
         {/* Auth */}
         <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
@@ -122,6 +154,91 @@ function AppContent() {
             <DoctorAppointmentsPage />
           </ProtectedRoute>
         } />
+        <Route path="/doctor/earnings" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <EarningsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/doctor/patients/:patientId/history" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <PatientHistoryPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Patient hospital routes */}
+        <Route path="/hospital-appointments" element={
+          <ProtectedRoute allowedRoles={["PATIENT"]}>
+            <MyHospitalAppointmentsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospitals/:hospitalId/book/:doctorId/:departmentId" element={
+          <ProtectedRoute allowedRoles={["PATIENT"]}>
+            <HospitalBookingPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Hospital admin routes */}
+        <Route path="/hospital/dashboard" element={
+          <ProtectedRoute allowedRoles={["HOSPITAL_ADMIN"]}>
+            <HospitalDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospital/setup" element={
+          <ProtectedRoute allowedRoles={["HOSPITAL_ADMIN"]}>
+            <SetupHospitalPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospital/departments" element={
+          <ProtectedRoute allowedRoles={["HOSPITAL_ADMIN"]}>
+            <ManageDepartmentsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospital/staff" element={
+          <ProtectedRoute allowedRoles={["HOSPITAL_ADMIN"]}>
+            <ManageStaffPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospital/appointments" element={
+          <ProtectedRoute allowedRoles={["HOSPITAL_ADMIN"]}>
+            <HospitalAppointmentsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Receptionist routes */}
+        <Route path="/hospital/reception" element={
+          <ProtectedRoute allowedRoles={["RECEPTIONIST"]}>
+            <ReceptionDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/hospital/reception/appointments" element={
+          <ProtectedRoute allowedRoles={["RECEPTIONIST"]}>
+            <HospitalAppointmentsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Doctor hospital routes */}
+        <Route path="/doctor/hospitals" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <MyHospitalsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/doctor/hospital-appointments" element={
+          <ProtectedRoute allowedRoles={["DOCTOR"]}>
+            <DoctorHospitalAppointmentsPage />
+          </ProtectedRoute>
+        } />
+
+        {/* Chat routes — both PATIENT and DOCTOR */}
+        <Route path="/chat" element={
+          <ProtectedRoute allowedRoles={["PATIENT", "DOCTOR"]}>
+            <ConversationsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/chat/:appointmentId" element={
+          <ProtectedRoute allowedRoles={["PATIENT", "DOCTOR"]}>
+            <ChatPage />
+          </ProtectedRoute>
+        } />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -153,6 +270,8 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 function getRoleHome(role: Role): string {
   switch (role) {
     case "DOCTOR": return "/doctor/dashboard";
+    case "HOSPITAL_ADMIN": return "/hospital/dashboard";
+    case "RECEPTIONIST": return "/hospital/reception";
     default: return "/dashboard";
   }
 }

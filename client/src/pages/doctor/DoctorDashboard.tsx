@@ -21,6 +21,7 @@ import {
   Circle,
   ExternalLink,
   X,
+  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Appointment, DoctorProfile, AppointmentStatus } from "../../types";
@@ -272,6 +273,24 @@ function DoctorDashboard() {
                       ₹{todayEarnings.toFixed(0)}
                     </p>
                     <p className="text-xs text-gray-500">Today's Earnings</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="col-span-2 sm:col-span-1">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-yellow-50 flex items-center justify-center shrink-0">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {(profile?.rating ?? 0) > 0
+                        ? `${(profile!.rating).toFixed(1)} / 5`
+                        : "—"}
+                    </p>
+                    <p className="text-xs text-gray-500">Your Rating</p>
+                    <p className="text-[10px] text-gray-400">
+                      Based on {profile?.totalReviews ?? 0} review{(profile?.totalReviews ?? 0) !== 1 ? "s" : ""}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

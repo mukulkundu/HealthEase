@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, User } from "lucide-react";
+import { Calendar, Clock, MessageSquare, User, History } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { Appointment, AppointmentStatus } from "../../types";
 
 interface Props {
@@ -9,6 +10,8 @@ interface Props {
   role: "PATIENT" | "DOCTOR";
   onCancel?: (id: string) => void;
   onStatusChange?: (id: string, status: AppointmentStatus) => void;
+  onReschedule?: (id: string) => void;
+  onViewHistory?: (patientId: string) => void;
 }
 
 const statusStyles: Record<AppointmentStatus, string> = {
@@ -24,7 +27,10 @@ export default function AppointmentCard({
   role,
   onCancel,
   onStatusChange,
+  onReschedule,
+  onViewHistory,
 }: Props) {
+  const navigate = useNavigate();
   const isCancellable =
     appointment.status === "PENDING" || appointment.status === "CONFIRMED";
 
@@ -90,6 +96,18 @@ export default function AppointmentCard({
 
           {/* Right: status + actions */}
           <div className="flex flex-col items-end gap-2 shrink-0">
+            {/* Chat button for CONFIRMED or COMPLETED appointments */}
+            {(appointment.status === "CONFIRMED" || appointment.status === "COMPLETED") && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs flex items-center gap-1"
+                onClick={() => navigate(`/chat/${appointment.id}`)}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Chat
+              </Button>
+            )}
             <div className="flex flex-wrap gap-1 justify-end">
               <Badge
                 variant="outline"
@@ -110,14 +128,48 @@ export default function AppointmentCard({
             </div>
 
             {/* Patient actions */}
-            {role === "PATIENT" && isCancellable && onCancel && (
+            {role === "PATIENT" && isCancellable && (
+              <div className="flex flex-col gap-1 items-end">
+                {onReschedule && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs"
+                    disabled={(appointment.rescheduleCount ?? 0) >= 2}
+                    title={
+                      (appointment.rescheduleCount ?? 0) >= 2
+                        ? "Maximum reschedules reached"
+                        : undefined
+                    }
+                    onClick={() => onReschedule(appointment.id)}
+                  >
+                    <Calendar className="h-3.5 w-3.5 mr-1" />
+                    Reschedule
+                  </Button>
+                )}
+                {onCancel && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
+                    onClick={() => onCancel(appointment.id)}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {/* Doctor history button */}
+            {role === "DOCTOR" && onViewHistory && appointment.patientId && (
               <Button
                 variant="outline"
                 size="sm"
-                className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
-                onClick={() => onCancel(appointment.id)}
+                className="text-gray-600 border-gray-200 hover:bg-gray-50 text-xs flex items-center gap-1"
+                onClick={() => onViewHistory(appointment.patientId)}
               >
-                Cancel
+                <History className="h-3.5 w-3.5" />
+                History
               </Button>
             )}
 

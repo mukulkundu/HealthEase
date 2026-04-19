@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { doctorApi } from "../../api/doctor.api";
+import { reviewApi } from "../../api/review.api";
 import DashboardLayout from "../../components/layout/DashboardLayout";
+import ReviewCard from "../../components/shared/ReviewCard";
+import StarRating from "../../components/shared/StarRating";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import type { DoctorProfile } from "../../types";
+import type { DoctorProfile, Review } from "../../types";
 
 const BIO_MAX = 500;
 
@@ -44,6 +47,10 @@ export default function DoctorProfilePage() {
   const [profile, setProfile] = useState<DoctorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsPage, setReviewsPage] = useState(1);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [qualifications, setQualifications] = useState<string[]>([]);
   const [qualInput, setQualInput] = useState("");
@@ -56,10 +63,33 @@ export default function DoctorProfilePage() {
   useEffect(() => {
     doctorApi
       .getMyProfile()
-      .then((p) => setProfile(p ?? null))
+      .then((p) => {
+        setProfile(p ?? null);
+        if (p?.id) loadReviews(p.id, 1);
+      })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadReviews = (doctorId: string, page: number) => {
+    setReviewsLoading(true);
+    reviewApi
+      .getDoctorReviews(doctorId, page)
+      .then((res) => {
+        if (page === 1) {
+          setReviews(Array.isArray(res.reviews) ? res.reviews : []);
+        } else {
+          setReviews((prev) => [
+            ...prev,
+            ...(Array.isArray(res.reviews) ? res.reviews : []),
+          ]);
+        }
+        setReviewsPage(res.page);
+        setReviewsTotalPages(res.totalPages);
+      })
+      .catch(() => {})
+      .finally(() => setReviewsLoading(false));
+  };
 
   const openEdit = () => {
     if (!profile) return;
@@ -223,6 +253,56 @@ export default function DoctorProfilePage() {
               <div className="mt-6 pt-6 border-t">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">About</h3>
                 <p className="text-sm text-gray-600 whitespace-pre-wrap">{profile.bio}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Reviews section */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="font-semibold text-gray-900 mb-4">Patient Reviews</h2>
+
+            {(profile.rating ?? 0) > 0 && (
+              <div className="flex items-center gap-3 mb-5">
+                <span className="text-4xl font-bold text-gray-900">
+                  {profile.rating.toFixed(1)}
+                </span>
+                <div className="space-y-0.5">
+                  <StarRating readonly rating={profile.rating} size="md" />
+                  <p className="text-sm text-gray-500">
+                    {profile.totalReviews} review{profile.totalReviews !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {reviewsLoading && reviews.length === 0 ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-4">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading reviews...
+              </div>
+            ) : reviews.length === 0 ? (
+              <p className="text-sm text-gray-500">No reviews yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {reviews.map((r) => (
+                  <ReviewCard key={r.id} review={r} />
+                ))}
+                {reviewsPage < reviewsTotalPages && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => profile?.id && loadReviews(profile.id, reviewsPage + 1)}
+                    disabled={reviewsLoading}
+                  >
+                    {reviewsLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Load more"
+                    )}
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>

@@ -29,6 +29,14 @@ router.get(
   appointmentController.getDoctorAppointments
 );
 
+// PATCH /api/appointments/:id/reschedule — patient reschedules
+router.patch(
+  "/:id/reschedule",
+  authenticate,
+  authorize("PATIENT"),
+  appointmentController.rescheduleAppointment
+);
+
 // PATCH /api/appointments/:id/cancel — patient or doctor cancels
 router.patch(
   "/:id/cancel",

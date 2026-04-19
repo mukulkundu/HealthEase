@@ -9,6 +9,14 @@ datasource db {
 enum Role {
   PATIENT
   DOCTOR
+  HOSPITAL_ADMIN
+  RECEPTIONIST
+}
+
+enum HospitalStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum AppointmentStatus {
@@ -46,9 +54,16 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  doctorProfile DoctorProfile?
-  appointments  Appointment[]  @relation("PatientAppointments")
-  refreshTokens RefreshToken[]
+  doctorProfile    DoctorProfile?
+  appointments     Appointment[]  @relation("PatientAppointments")
+  refreshTokens    RefreshToken[]
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  patientReviews   Review[]       @relation("PatientReviews")
+
+  hospitalAdmin        Hospital?            @relation("HospitalAdmin")
+  hospitalStaff        HospitalStaff?       @relation("HospitalStaffMember")
+  hospitalAppointments HospitalAppointment[] @relation("PatientHospitalAppointments")
 }
 
 model RefreshToken {
@@ -79,6 +94,11 @@ model DoctorProfile {
 
   schedules    Schedule[]
   appointments Appointment[]
+  reviews      Review[]
+
+  departmentDoctors    DepartmentDoctor[]
+  hospitalSchedules    HospitalSchedule[]
+  hospitalAppointments HospitalAppointment[]
 }
 
 model Schedule {
@@ -113,8 +133,29 @@ model Appointment {
 
   isPaid   Boolean  @default(false)
   payment  Payment?
+  messages Message[]
+  review   Review?
+
+  // Reschedule tracking
+  rescheduledAt     DateTime?
+  originalDate      DateTime?
+  originalStartTime String?
+  rescheduleCount   Int       @default(0)
 
   @@unique([doctorId, date, startTime])
+}
+
+model Message {
+  id            String      @id @default(cuid())
+  content       String
+  senderId      String
+  sender        User        @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId    String
+  receiver      User        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  isRead        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
 }
 
 model Payment {
@@ -129,4 +170,136 @@ model Payment {
   status             PaymentStatus  @default(PAID)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
+}
+
+model Review {
+  id            String        @id @default(cuid())
+  rating        Int
+  comment       String?
+  patientId     String
+  patient       User          @relation("PatientReviews", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId      String
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointmentId String        @unique
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Hospital {
+  id          String        @id @default(cuid())
+  name        String
+  address     String
+  city        String
+  state       String
+  pincode     String
+  phone       String
+  email       String        @unique
+  website     String?
+  description String?
+  logoUrl     String?
+  status      HospitalStatus @default(PENDING)
+  adminId     String        @unique
+  admin       User          @relation("HospitalAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  departments          Department[]
+  staff                HospitalStaff[]
+  hospitalAppointments HospitalAppointment[]
+}
+
+model Department {
+  id         String   @id @default(cuid())
+  name       String
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  departmentDoctors    DepartmentDoctor[]
+  hospitalSchedules    HospitalSchedule[]
+  hospitalAppointments HospitalAppointment[]
+
+  @@unique([hospitalId, name])
+}
+
+model DepartmentDoctor {
+  id              String        @id @default(cuid())
+  doctorId        String
+  doctor          DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  departmentId    String
+  department      Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  consultationFee Float
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([doctorId, departmentId])
+}
+
+model HospitalStaff {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation("HospitalStaffMember", fields: [userId], references: [id], onDelete: Cascade)
+  hospitalId String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model HospitalSchedule {
+  id           String        @id @default(cuid())
+  doctorId     String
+  doctor       DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  dayOfWeek    DayOfWeek
+  startTime    String
+  endTime      String
+  slotDuration Int
+  bufferTime   Int           @default(0)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([doctorId, departmentId, dayOfWeek])
+}
+
+model HospitalAppointment {
+  id           String            @id @default(cuid())
+  patientId    String
+  patient      User              @relation("PatientHospitalAppointments", fields: [patientId], references: [id])
+  doctorId     String
+  doctor       DoctorProfile     @relation(fields: [doctorId], references: [id])
+  departmentId String
+  department   Department        @relation(fields: [departmentId], references: [id])
+  hospitalId   String
+  hospital     Hospital          @relation(fields: [hospitalId], references: [id])
+  date         DateTime
+  startTime    String
+  endTime      String
+  status       AppointmentStatus @default(PENDING)
+  notes        String?
+  isPaid       Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  payment      HospitalPayment?
+
+  @@unique([doctorId, departmentId, date, startTime])
+}
+
+model HospitalPayment {
+  id                  String              @id @default(cuid())
+  appointmentId       String              @unique
+  appointment         HospitalAppointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  razorpayOrderId     String
+  razorpayPaymentId   String
+  razorpaySignature   String
+  amount              Int
+  currency            String
+  status              PaymentStatus       @default(PAID)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }

@@ -66,6 +66,34 @@ export const cancelAppointment = async (
   }
 };
 
+export const rescheduleAppointment = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { date, startTime, endTime } = req.body;
+
+    if (!date || !startTime || !endTime) {
+      return sendError(res, "date, startTime, and endTime are required", 400);
+    }
+
+    if (!TIME_REGEX.test(startTime) || !TIME_REGEX.test(endTime)) {
+      return sendError(res, "startTime and endTime must be in HH:mm format", 400);
+    }
+
+    const appointment = await appointmentService.rescheduleAppointment(
+      req.user!.id,
+      req.params.id as string,
+      { date, startTime, endTime }
+    );
+
+    return sendSuccess(res, appointment, "Appointment rescheduled successfully");
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const updateAppointmentStatus = async (
   req: AuthRequest,
   res: Response,

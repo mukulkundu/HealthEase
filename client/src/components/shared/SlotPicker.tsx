@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { scheduleApi } from "../../api/schedule.api";
+import { hospitalScheduleApi } from "../../api/hospitalSchedule.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,9 @@ interface Props {
   onSlotSelect: (slot: TimeSlot, date: string) => void;
   selectedSlot?: TimeSlot | null;
   selectedDate?: string;
+  /** When true, use hospital schedule slots (requires departmentId) */
+  isHospital?: boolean;
+  departmentId?: string;
 }
 
 function to12h(t: string): string {
@@ -39,6 +43,8 @@ export default function SlotPicker({
   onSlotSelect,
   selectedSlot,
   selectedDate,
+  isHospital,
+  departmentId,
 }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const [date, setDate] = useState(selectedDate || today);
@@ -54,15 +60,17 @@ export default function SlotPicker({
     if (!date || !doctorId) return;
     setLoading(true);
     setError("");
-    scheduleApi
-      .getAvailableSlots(doctorId, date)
+    const fetchSlots = isHospital && departmentId
+      ? hospitalScheduleApi.getAvailableSlots(doctorId, departmentId, date)
+      : scheduleApi.getAvailableSlots(doctorId, date);
+    fetchSlots
       .then((data) => setSlots(Array.isArray(data) ? data : []))
       .catch(() => {
         setError("Could not load slots for this date.");
         setSlots([]);
       })
       .finally(() => setLoading(false));
-  }, [doctorId, date]);
+  }, [doctorId, date, isHospital, departmentId]);
 
   const slotList = Array.isArray(slots) ? slots : [];
   const availableSlots = slotList.filter((s) => s?.available);

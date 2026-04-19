@@ -1,6 +1,7 @@
 import db from "../../config/db.js";
 import { razorpay } from "../../config/razorpay.js";
 import { AppError } from "../../middleware/error.middleware.js";
+import { sendAppointmentConfirmation } from "../../services/email.service.js";
 
 export const createOrderForAppointment = async (
   patientId: string,
@@ -140,6 +141,23 @@ export const verifyPaymentAndCreateAppointment = async (
       status: "PAID",
     },
   });
+
+  // Fire-and-forget confirmation emails
+  try {
+    await sendAppointmentConfirmation({
+      patientName: appointment.patient.name,
+      patientEmail: appointment.patient.email,
+      doctorName: appointment.doctor.user.name,
+      doctorEmail: appointment.doctor.user.email,
+      specialization: appointment.doctor.specialization,
+      consultationFee: appointment.doctor.consultationFee,
+      date: appointment.date,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+    });
+  } catch (err) {
+    console.error("Failed to send confirmation email:", err);
+  }
 
   return appointment;
 };

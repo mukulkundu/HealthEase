@@ -25,4 +25,6 @@ export const env = {
   JWT_ACCESS_EXPIRES_IN: getEnv("JWT_ACCESS_EXPIRES_IN", "15m"),
   JWT_REFRESH_EXPIRES_IN: getEnv("JWT_REFRESH_EXPIRES_IN", "7d"),
   FRONTEND_URL: getEnv("FRONTEND_URL", "http://localhost:5173"),
+  RESEND_API_KEY: getEnv("RESEND_API_KEY", ""),
+  EMAIL_FROM: getEnv("EMAIL_FROM", "HealthEase <onboarding@resend.dev>"),
 };

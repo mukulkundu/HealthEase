@@ -2,6 +2,7 @@ import db from "../../config/db.js";
 import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import { AppError } from "../../middleware/error.middleware.js";
+import { sendWelcomeEmail } from "../../services/email.service.js";
 
 export const registerUser = async (data: {
   name: string;
@@ -43,6 +44,13 @@ export const registerUser = async (data: {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
   });
+
+  // Fire-and-forget welcome email
+  try {
+    await sendWelcomeEmail({ name: user.name, email: user.email, role: user.role });
+  } catch (err) {
+    console.error("Failed to send welcome email:", err);
+  }
 
   return { user, accessToken, refreshToken };
 };

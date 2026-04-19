@@ -14,7 +14,7 @@ export function useAuth() {
     name: string;
     email: string;
     password: string;
-    role: "PATIENT" | "DOCTOR";
+    role: Role;
   }) => {
     setLoading(true);
     let user: { role: Role } | null = null;
@@ -82,6 +82,8 @@ export function useAuth() {
 function getRoleHome(role: Role): string {
   switch (role) {
     case "DOCTOR": return "/doctor/dashboard";
+    case "HOSPITAL_ADMIN": return "/hospital/dashboard";
+    case "RECEPTIONIST": return "/hospital/reception";
     default: return "/dashboard";
   }
 }

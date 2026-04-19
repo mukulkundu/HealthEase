@@ -37,8 +37,8 @@ export const register = async (
       return sendError(res, "name, email, password and role are required", 400);
     }
 
-    if (!["PATIENT", "DOCTOR"].includes(role)) {
-      return sendError(res, "Role must be PATIENT or DOCTOR", 400);
+    if (!["PATIENT", "DOCTOR", "HOSPITAL_ADMIN", "RECEPTIONIST"].includes(role)) {
+      return sendError(res, "Invalid role", 400);
     }
 
     if (password.length < 8) {

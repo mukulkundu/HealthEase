@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { env } from "./config/env.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 
@@ -12,8 +14,20 @@ import doctorRoutes from "./modules/doctor/doctor.routes.js";
 import scheduleRoutes from "./modules/schedule/schedule.routes.js";
 import appointmentRoutes from "./modules/appointment/appointment.routes.js";
 import paymentRoutes from "./modules/payment/payment.routes.js";
+import chatRoutes from "./modules/chat/chat.routes.js";
+import reviewRoutes from "./modules/review/review.routes.js";
+import earningsRoutes from "./modules/earnings/earnings.routes.js";
+import patientRoutes from "./modules/patient/patient.routes.js";
+import hospitalRoutes from "./modules/hospital/hospital.routes.js";
+import departmentRoutes from "./modules/department/department.routes.js";
+import hospitalScheduleRoutes from "./modules/hospitalSchedule/hospitalSchedule.routes.js";
+import hospitalAppointmentRoutes from "./modules/hospitalAppointment/hospitalAppointment.routes.js";
+import hospitalPaymentRoutes from "./modules/hospitalPayment/hospitalPayment.routes.js";
+import staffRoutes from "./modules/staff/staff.routes.js";
+import { startReminderJob } from "./jobs/reminder.job.js";
 
 const app = express();
+const httpServer = createServer(app);
 
 // CORS — allow credentials for cookie-based auth (allow localhost + 127.0.0.1 in dev)
 const allowedOrigins =
@@ -29,6 +43,14 @@ app.use(
     credentials: true,
   })
 );
+
+// Socket.io server
+export const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
 
 // Body parser & cookies
 app.use(express.json());
@@ -54,6 +76,16 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/earnings", earningsRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/hospitals", hospitalRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/hospital-schedules", hospitalScheduleRoutes);
+app.use("/api/hospital-appointments", hospitalAppointmentRoutes);
+app.use("/api/hospital-payments", hospitalPaymentRoutes);
+app.use("/api/staff", staffRoutes);
 
 // Health check
 app.get("/health", (_req, res) => {
@@ -63,8 +95,16 @@ app.get("/health", (_req, res) => {
 // Global error handler — must be last
 app.use(errorMiddleware);
 
+// Register socket handlers
+import("./socket/socket.handler.js").then(({ registerSocketHandlers }) => {
+  registerSocketHandlers(io);
+});
+
+// Start reminder cron job
+startReminderJob();
+
 // Start server
-app.listen(Number(env.PORT), () => {
+httpServer.listen(Number(env.PORT), () => {
   console.log(`🚀 Server running on http://localhost:${env.PORT}`);
 });
 
