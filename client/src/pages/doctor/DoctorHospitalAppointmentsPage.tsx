@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarCheck, Clock, User, Building2, Loader2 } from "lucide-react";
+import { Video } from "lucide-react";
 import { toast } from "sonner";
 import type { HospitalAppointment, AppointmentStatus } from "../../types";
+import { useNavigate } from "react-router-dom";
+import { isCallJoinable, isCallNotStartedYet } from "../../utils/video";
 
 const statusStyles: Record<AppointmentStatus, string> = {
   PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -28,6 +31,7 @@ function to12h(t: string) {
 }
 
 export default function DoctorHospitalAppointmentsPage() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<HospitalAppointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,7 +61,7 @@ export default function DoctorHospitalAppointmentsPage() {
   const completed = list.filter((a) => a.status === "COMPLETED" || a.status === "NO_SHOW");
   const cancelled = list.filter((a) => a.status === "CANCELLED");
 
-  const ApptCard = ({ appt }: { appt: HospitalAppointment }) => (
+  const renderApptCard = (appt: HospitalAppointment) => (
     <Card className="hover:shadow-sm transition-shadow">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-4">
@@ -89,6 +93,21 @@ export default function DoctorHospitalAppointmentsPage() {
             )}
             {appt.status === "CONFIRMED" && (
               <div className="flex flex-col gap-1">
+                {isCallJoinable(appt) ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-green-700 border-green-300 hover:bg-green-50 text-xs h-7"
+                    onClick={() => navigate(`/call/${appt.id}?type=hospital`)}
+                  >
+                    <Video className="h-3.5 w-3.5 mr-1" />
+                    Join Call
+                  </Button>
+                ) : isCallNotStartedYet(appt) ? (
+                  <Button size="sm" variant="outline" className="text-xs h-7" disabled>
+                    Call Starts At {to12h(appt.startTime)}
+                  </Button>
+                ) : null}
                 <Button size="sm" className="text-xs h-7" onClick={() => handleStatusChange(appt.id, "COMPLETED")}>
                   Mark Complete
                 </Button>
@@ -103,7 +122,7 @@ export default function DoctorHospitalAppointmentsPage() {
     </Card>
   );
 
-  const EmptyState = () => (
+  const renderEmptyState = () => (
     <div className="rounded-lg border bg-gray-50 py-12 text-center">
       <CalendarCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
       <p className="text-sm text-gray-500">No appointments here</p>
@@ -131,16 +150,16 @@ export default function DoctorHospitalAppointmentsPage() {
               <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
             </TabsList>
             <TabsContent value="pending" className="space-y-3">
-              {pending.length === 0 ? <EmptyState /> : pending.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {pending.length === 0 ? renderEmptyState() : pending.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
             <TabsContent value="confirmed" className="space-y-3">
-              {confirmed.length === 0 ? <EmptyState /> : confirmed.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {confirmed.length === 0 ? renderEmptyState() : confirmed.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
             <TabsContent value="completed" className="space-y-3">
-              {completed.length === 0 ? <EmptyState /> : completed.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {completed.length === 0 ? renderEmptyState() : completed.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
             <TabsContent value="cancelled" className="space-y-3">
-              {cancelled.length === 0 ? <EmptyState /> : cancelled.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {cancelled.length === 0 ? renderEmptyState() : cancelled.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
           </Tabs>
         )}

@@ -9,12 +9,58 @@ export const getAllDoctors = async (
   next: NextFunction
 ) => {
   try {
-    const { specialization, name } = req.query as {
+    const {
+      specialization,
+      name,
+      minFee,
+      maxFee,
+      minExperience,
+      maxExperience,
+      minRating,
+      availableOn,
+      sortBy,
+      page,
+      limit,
+      languages,
+    } = req.query as {
       specialization?: string;
       name?: string;
+      minFee?: string;
+      maxFee?: string;
+      minExperience?: string;
+      maxExperience?: string;
+      minRating?: string;
+      availableOn?: string;
+      sortBy?: "rating" | "fee_asc" | "fee_desc" | "experience";
+      page?: string;
+      limit?: string;
+      languages?: string | string[];
     };
 
-    const doctors = await doctorService.getAllDoctors({ specialization, name });
+    const parsedLanguages =
+      typeof languages === "string"
+        ? languages
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : Array.isArray(languages)
+        ? languages.filter(Boolean)
+        : undefined;
+
+    const doctors = await doctorService.getAllDoctors({
+      specialization,
+      name,
+      minFee: minFee ? Number(minFee) : undefined,
+      maxFee: maxFee ? Number(maxFee) : undefined,
+      minExperience: minExperience ? Number(minExperience) : undefined,
+      maxExperience: maxExperience ? Number(maxExperience) : undefined,
+      minRating: minRating ? Number(minRating) : undefined,
+      availableOn: availableOn?.toUpperCase(),
+      sortBy,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      languages: parsedLanguages,
+    });
     return sendSuccess(res, doctors);
   } catch (err) {
     next(err);

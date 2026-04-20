@@ -1,6 +1,9 @@
 import cron from "node-cron";
 import db from "../config/db.js";
-import { sendAppointmentReminder } from "../services/email.service.js";
+import {
+  sendAppointmentReminder,
+  sendVideoCallReminder,
+} from "../services/email.service.js";
 
 export function startReminderJob() {
   // Runs every day at 8:00 AM
@@ -56,5 +59,104 @@ export function startReminderJob() {
     }
   });
 
+  // Runs every 15 minutes to remind about video calls.
+  cron.schedule("*/15 * * * *", async () => {
+    const now = new Date();
+    const in15 = new Date(now.getTime() + 15 * 60 * 1000);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(now);
+    todayEnd.setHours(23, 59, 59, 999);
+
+    try {
+      const appointments = await db.appointment.findMany({
+        where: {
+          status: "CONFIRMED",
+          date: { gte: todayStart, lte: todayEnd },
+          reminderSent: false,
+          videoCallStarted: null,
+        },
+        include: {
+          patient: { select: { id: true, name: true, email: true } },
+          doctor: { include: { user: { select: { id: true, name: true, email: true } } } },
+        },
+      });
+
+      for (const appt of appointments) {
+        const apptTime = new Date(appt.date);
+        const [h, m] = appt.startTime.split(":").map(Number);
+        apptTime.setHours(h, m, 0, 0);
+        const diffMs = apptTime.getTime() - in15.getTime();
+        if (Math.abs(diffMs) > 10 * 60 * 1000) continue;
+
+        await sendVideoCallReminder({
+          recipientName: appt.patient.name,
+          recipientEmail: appt.patient.email,
+          counterpartName: `Dr. ${appt.doctor.user.name}`,
+          appointmentId: appt.id,
+          type: "independent",
+          startTime: appt.startTime,
+        });
+        await sendVideoCallReminder({
+          recipientName: `Dr. ${appt.doctor.user.name}`,
+          recipientEmail: appt.doctor.user.email,
+          counterpartName: appt.patient.name,
+          appointmentId: appt.id,
+          type: "independent",
+          startTime: appt.startTime,
+        });
+        await db.appointment.update({
+          where: { id: appt.id },
+          data: { reminderSent: true },
+        });
+      }
+
+      const hospitalAppointments = await db.hospitalAppointment.findMany({
+        where: {
+          status: "CONFIRMED",
+          date: { gte: todayStart, lte: todayEnd },
+          reminderSent: false,
+          videoCallStarted: null,
+        },
+        include: {
+          patient: { select: { id: true, name: true, email: true } },
+          doctor: { include: { user: { select: { id: true, name: true, email: true } } } },
+        },
+      });
+
+      for (const appt of hospitalAppointments) {
+        const apptTime = new Date(appt.date);
+        const [h, m] = appt.startTime.split(":").map(Number);
+        apptTime.setHours(h, m, 0, 0);
+        const diffMs = apptTime.getTime() - in15.getTime();
+        if (Math.abs(diffMs) > 10 * 60 * 1000) continue;
+
+        await sendVideoCallReminder({
+          recipientName: appt.patient.name,
+          recipientEmail: appt.patient.email,
+          counterpartName: `Dr. ${appt.doctor.user.name}`,
+          appointmentId: appt.id,
+          type: "hospital",
+          startTime: appt.startTime,
+        });
+        await sendVideoCallReminder({
+          recipientName: `Dr. ${appt.doctor.user.name}`,
+          recipientEmail: appt.doctor.user.email,
+          counterpartName: appt.patient.name,
+          appointmentId: appt.id,
+          type: "hospital",
+          startTime: appt.startTime,
+        });
+        await db.hospitalAppointment.update({
+          where: { id: appt.id },
+          data: { reminderSent: true },
+        });
+      }
+    } catch (err) {
+      console.error("[reminder.job] Video reminder job failed:", err);
+    }
+  });
+
   console.log("[reminder.job] Daily reminder cron job registered (08:00 AM)");
+  console.log("[reminder.job] Video reminder cron job registered (every 15 minutes)");
 }

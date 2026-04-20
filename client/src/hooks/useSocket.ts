@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/authStore";
 import { socket } from "../socket/socket";
 import { useNotificationsStore } from "../store/notificationsStore";
 import { chatApi } from "../api/chat.api";
+import { toast } from "sonner";
 
 export function useSocket() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -30,10 +31,28 @@ export function useSocket() {
     function onNewMessage() {
       incrementUnread();
     }
+    function onIncomingCall(payload: {
+      appointmentId: string;
+      callerName: string;
+      type?: "independent" | "hospital";
+    }) {
+      toast(`${payload.callerName} has joined the video call`, {
+        action: {
+          label: "Join Now",
+          onClick: () => {
+            window.location.href = `/call/${payload.appointmentId}?type=${
+              payload.type ?? "independent"
+            }`;
+          },
+        },
+      });
+    }
     socket.on("new_message", onNewMessage);
+    socket.on("incoming_call", onIncomingCall);
 
     return () => {
       socket.off("new_message", onNewMessage);
+      socket.off("incoming_call", onIncomingCall);
       socket.disconnect();
     };
   }, [isAuthenticated, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps

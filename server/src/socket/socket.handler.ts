@@ -15,20 +15,34 @@ export function registerSocketHandlers(io: Server) {
     console.log(`User ${userId} connected`);
 
     // ─── join_appointment_room ───────────────────────────────────────────────
-    socket.on("join_appointment_room", async ({ appointmentId }: { appointmentId: string }) => {
+    socket.on("join_appointment_room", async ({ appointmentId, type }: { appointmentId: string; type?: "independent" | "hospital" }) => {
       try {
-        const appointment = await db.appointment.findUnique({
-          where: { id: appointmentId },
-          include: { doctor: { select: { userId: true } } },
-        });
+        let isPatient = false;
+        let isDoctor = false;
 
-        if (!appointment) {
-          socket.emit("error", "Appointment not found");
-          return;
+        if (type === "hospital") {
+          const appointment = await db.hospitalAppointment.findUnique({
+            where: { id: appointmentId },
+            include: { doctor: { include: { user: { select: { id: true } } } } },
+          });
+          if (!appointment) {
+            socket.emit("error", "Appointment not found");
+            return;
+          }
+          isPatient = appointment.patientId === userId;
+          isDoctor = appointment.doctor.user.id === userId;
+        } else {
+          const appointment = await db.appointment.findUnique({
+            where: { id: appointmentId },
+            include: { doctor: { select: { userId: true } } },
+          });
+          if (!appointment) {
+            socket.emit("error", "Appointment not found");
+            return;
+          }
+          isPatient = appointment.patientId === userId;
+          isDoctor = appointment.doctor.userId === userId;
         }
-
-        const isPatient = appointment.patientId === userId;
-        const isDoctor = appointment.doctor.userId === userId;
 
         if (!isPatient && !isDoctor) {
           socket.emit("error", "Unauthorized");
@@ -49,10 +63,12 @@ export function registerSocketHandlers(io: Server) {
         appointmentId,
         receiverId,
         content,
+        type,
       }: {
         appointmentId: string;
         receiverId: string;
         content: string;
+        type?: "independent" | "hospital";
       }) => {
         try {
           if (!content || !content.trim()) {
@@ -61,6 +77,11 @@ export function registerSocketHandlers(io: Server) {
           }
 
           // Verify appointment exists and belongs to sender & receiver with CONFIRMED or COMPLETED status
+          if (type === "hospital") {
+            socket.emit("error", "In-call chat is currently available only for independent appointments");
+            return;
+          }
+
           const appointment = await db.appointment.findFirst({
             where: {
               id: appointmentId,
@@ -76,7 +97,6 @@ export function registerSocketHandlers(io: Server) {
                 },
               ],
             },
-            include: { doctor: { select: { userId: true } } },
           });
 
           if (!appointment) {
@@ -138,6 +158,32 @@ export function registerSocketHandlers(io: Server) {
     );
 
     // ─── disconnect ──────────────────────────────────────────────────────────
+    socket.on(
+      "call_started",
+      ({
+        appointmentId,
+        callerName,
+        callerRole,
+        type,
+      }: {
+        appointmentId: string;
+        callerName: string;
+        callerRole: string;
+        type: "independent" | "hospital";
+      }) => {
+        io.to(`appointment_${appointmentId}`).emit("incoming_call", {
+          appointmentId,
+          callerName,
+          callerRole,
+          type,
+        });
+      }
+    );
+
+    socket.on("call_ended", ({ appointmentId }: { appointmentId: string }) => {
+      io.to(`appointment_${appointmentId}`).emit("call_ended", { appointmentId });
+    });
+
     socket.on("disconnect", () => {
       console.log(`User ${userId} disconnected`);
     });

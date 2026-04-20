@@ -1,10 +1,28 @@
 import client from "./client";
-import type { ApiResponse, Hospital } from "../types";
+import type { ApiResponse, Hospital, PaginatedHospitalsResponse } from "../types";
 
 export const hospitalApi = {
-  listHospitals: async (q?: string): Promise<Hospital[]> => {
-    const res = await client.get<ApiResponse<Hospital[]>>("/hospitals", { params: q ? { q } : {} });
-    return Array.isArray(res.data.data) ? res.data.data : [];
+  listHospitals: async (params?: {
+    q?: string;
+    name?: string;
+    city?: string;
+    state?: string;
+    department?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedHospitalsResponse> => {
+    const res = await client.get<ApiResponse<PaginatedHospitalsResponse>>("/hospitals", {
+      params: params ?? {},
+    });
+    return (
+      res.data.data ?? {
+        hospitals: [],
+        total: 0,
+        page: params?.page ?? 1,
+        totalPages: 0,
+        hasMore: false,
+      }
+    );
   },
 
   getById: async (id: string): Promise<Hospital> => {

@@ -1,6 +1,7 @@
 import prisma from "../../config/db.js";
 import { AppError } from "../../middleware/error.middleware.js";
 import type { AppointmentStatus } from "@prisma/client";
+import { createVideoRoom } from "../video/video.service.js";
 
 export async function getPatientHospitalAppointments(patientId: string) {
   return prisma.hospitalAppointment.findMany({
@@ -106,10 +107,20 @@ export async function updateHospitalAppointmentStatus(
     }
   }
 
-  return prisma.hospitalAppointment.update({
+  const updated = await prisma.hospitalAppointment.update({
     where: { id: appointmentId },
     data: { status },
   });
+
+  if (status === "CONFIRMED") {
+    try {
+      await createVideoRoom(appointmentId, "hospital");
+    } catch (err) {
+      console.error("Failed to auto-create hospital video room:", err);
+    }
+  }
+
+  return updated;
 }
 
 export async function cancelHospitalAppointment(patientId: string, appointmentId: string) {

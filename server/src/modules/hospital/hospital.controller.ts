@@ -32,9 +32,24 @@ export const updateHospital = async (req: AuthRequest, res: Response, next: Next
 
 export const listHospitals = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const q = req.query.q;
-    const query = typeof q === "string" ? q : undefined;
-    const hospitals = await hospitalService.listHospitals(query);
+    const { q, name, city, state, department, page, limit } = req.query as {
+      q?: string;
+      name?: string;
+      city?: string;
+      state?: string;
+      department?: string;
+      page?: string;
+      limit?: string;
+    };
+
+    const hospitals = await hospitalService.listHospitals({
+      name: name || q,
+      city,
+      state,
+      department,
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
     return sendSuccess(res, hospitals);
   } catch (err) { next(err); }
 };

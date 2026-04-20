@@ -141,6 +141,12 @@ model Appointment {
   originalDate      DateTime?
   originalStartTime String?
   rescheduleCount   Int       @default(0)
+  reminderSent      Boolean   @default(false)
+
+  videoRoomName    String?
+  videoRoomUrl     String?
+  videoCallStarted DateTime?
+  videoCallEnded   DateTime?
 
   @@unique([doctorId, date, startTime])
 }
@@ -282,10 +288,15 @@ model HospitalAppointment {
   status       AppointmentStatus @default(PENDING)
   notes        String?
   isPaid       Boolean           @default(false)
+  reminderSent Boolean           @default(false)
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
   payment      HospitalPayment?
+  videoRoomName    String?
+  videoRoomUrl     String?
+  videoCallStarted DateTime?
+  videoCallEnded   DateTime?
 
   @@unique([doctorId, departmentId, date, startTime])
 }

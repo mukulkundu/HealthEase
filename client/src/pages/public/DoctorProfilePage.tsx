@@ -21,6 +21,7 @@ import {
   CalendarCheck,
 } from "lucide-react";
 import type { DoctorProfile, Schedule, Review } from "../../types";
+import DoctorCard from "../../components/shared/DoctorCard";
 
 const DAY_ORDER = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
 
@@ -35,6 +36,7 @@ export default function DoctorProfilePage() {
   const [reviewsPage, setReviewsPage] = useState(1);
   const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [similarDoctors, setSimilarDoctors] = useState<DoctorProfile[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -53,6 +55,18 @@ export default function DoctorProfilePage() {
       })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!doctor?.specialization || !doctor.id) return;
+    doctorApi
+      .getAll({ specialization: doctor.specialization, limit: 4, page: 1 })
+      .then((res) => {
+        setSimilarDoctors(
+          (res.doctors ?? []).filter((item) => item.id !== doctor.id).slice(0, 3)
+        );
+      })
+      .catch(() => setSimilarDoctors([]));
+  }, [doctor?.specialization, doctor?.id]);
 
   const loadReviews = (page: number) => {
     if (!id) return;
@@ -77,6 +91,7 @@ export default function DoctorProfilePage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!loading && id) loadReviews(1);
   }, [loading, id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -126,6 +141,16 @@ export default function DoctorProfilePage() {
               <div className="flex-1 space-y-3">
                 <h1 className="text-2xl font-bold text-gray-900">Dr. {name}</h1>
                 <p className="text-blue-600 font-medium">{doctor.specialization}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">{doctor.experience}+ yrs</Badge>
+                  <Badge variant="secondary">
+                    {doctor.rating > 0 ? `${doctor.rating.toFixed(1)}★` : "No rating yet"}
+                  </Badge>
+                  <Badge variant="secondary">Rs{doctor.consultationFee}</Badge>
+                  <Badge variant="outline">
+                    {(doctor.languages ?? []).slice(0, 2).join(", ") || "Languages N/A"}
+                  </Badge>
+                </div>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                   <span className="flex items-center gap-1.5">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -182,28 +207,17 @@ export default function DoctorProfilePage() {
         <Card>
           <CardContent className="p-6">
             <h2 className="font-semibold text-gray-900 mb-4">Availability</h2>
-            <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
               {DAY_ORDER.map((day) => {
                 const s = scheduleByDay.get(day);
                 return (
-                  <div
+                  <Badge
                     key={day}
-                    className="flex items-center justify-between py-2 border-b last:border-0"
+                    variant={s ? "default" : "outline"}
+                    className={!s ? "text-gray-400 border-gray-300" : ""}
                   >
-                    <span className="text-sm font-medium text-gray-700 w-28 capitalize">
-                      {day.charAt(0) + day.slice(1).toLowerCase()}
-                    </span>
-                    {s ? (
-                      <>
-                        <span className="text-sm text-gray-600">
-                          {s.startTime} – {s.endTime}
-                        </span>
-                        <span className="text-xs text-gray-400">{s.slotDuration} min slots</span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-400">Not available</span>
-                    )}
-                  </div>
+                    {day.slice(0, 3)} {s ? `${s.startTime}-${s.endTime}` : "Unavailable"}
+                  </Badge>
                 );
               })}
             </div>
@@ -256,6 +270,21 @@ export default function DoctorProfilePage() {
             )}
           </CardContent>
         </Card>
+
+        {similarDoctors.length > 0 && (
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="font-semibold text-gray-900 mb-4">
+                Other {doctor.specialization} Doctors
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {similarDoctors.map((item) => (
+                  <DoctorCard key={item.id} doctor={item} />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

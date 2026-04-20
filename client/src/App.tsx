@@ -58,6 +58,7 @@ import DoctorHospitalAppointmentsPage from "./pages/doctor/DoctorHospitalAppoint
 // Patient hospital pages
 import MyHospitalAppointmentsPage from "./pages/patient/MyHospitalAppointmentsPage";
 import HospitalBookingPage from "./pages/patient/HospitalBookingPage";
+import VideoCallPage from "./pages/video/VideoCallPage";
 
 // Layout
 import ProtectedRoute from "./components/layout/ProtectedRoute";
@@ -237,6 +238,11 @@ function AppContent() {
         <Route path="/chat/:appointmentId" element={
           <ProtectedRoute allowedRoles={["PATIENT", "DOCTOR"]}>
             <ChatPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/call/:appointmentId" element={
+          <ProtectedRoute allowedRoles={["PATIENT", "DOCTOR"]}>
+            <VideoCallPage />
           </ProtectedRoute>
         } />
 

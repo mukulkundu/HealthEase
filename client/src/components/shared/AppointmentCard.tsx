@@ -1,9 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, MessageSquare, User, History } from "lucide-react";
+import { Calendar, Clock, MessageSquare, User, History, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Appointment, AppointmentStatus } from "../../types";
+import { isCallJoinable, isCallNotStartedYet } from "../../utils/video";
 
 interface Props {
   appointment: Appointment;
@@ -106,6 +107,22 @@ export default function AppointmentCard({
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 Chat
+              </Button>
+            )}
+            {appointment.status === "CONFIRMED" && isCallJoinable(appointment) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-green-700 border-green-300 hover:bg-green-50 text-xs flex items-center gap-1"
+                onClick={() => navigate(`/call/${appointment.id}?type=independent`)}
+              >
+                <Video className="h-3.5 w-3.5" />
+                Join Call
+              </Button>
+            )}
+            {appointment.status === "CONFIRMED" && isCallNotStartedYet(appointment) && (
+              <Button variant="outline" size="sm" className="text-xs" disabled>
+                Call Starts At {formatTime12h(appointment.startTime)}
               </Button>
             )}
             <div className="flex flex-wrap gap-1 justify-end">

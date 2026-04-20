@@ -1,13 +1,40 @@
 import client from "./client";
-import type { ApiResponse, DoctorProfile } from "../types";
+import type { ApiResponse, DoctorProfile, PaginatedDoctorsResponse } from "../types";
 
 export const doctorApi = {
   getAll: async (params?: {
-    specialization?: string;
     name?: string;
-  }): Promise<DoctorProfile[]> => {
-    const res = await client.get<ApiResponse<DoctorProfile[]>>("/doctors", { params });
-    return Array.isArray(res.data?.data) ? res.data.data : [];
+    specialization?: string;
+    minFee?: number;
+    maxFee?: number;
+    minExperience?: number;
+    maxExperience?: number;
+    minRating?: number;
+    availableOn?: string;
+    sortBy?: "rating" | "fee_asc" | "fee_desc" | "experience";
+    page?: number;
+    limit?: number;
+    languages?: string[];
+  }): Promise<PaginatedDoctorsResponse> => {
+    const query = {
+      ...params,
+      ...(params?.languages?.length
+        ? { languages: params.languages.join(",") }
+        : { languages: undefined }),
+    };
+    const res = await client.get<ApiResponse<PaginatedDoctorsResponse>>("/doctors", {
+      params: query,
+    });
+
+    return (
+      res.data?.data ?? {
+        doctors: [],
+        total: 0,
+        page: params?.page ?? 1,
+        totalPages: 0,
+        hasMore: false,
+      }
+    );
   },
 
   getById: async (id: string): Promise<DoctorProfile | null> => {

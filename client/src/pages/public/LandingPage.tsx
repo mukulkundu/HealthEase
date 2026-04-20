@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Navbar from "../../components/layout/Navbar";
 import {
   Stethoscope,
@@ -27,6 +29,13 @@ const SPECIALIZATIONS = [
 ];
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<"doctors" | "hospitals">("doctors");
+  const [doctorSpecialization, setDoctorSpecialization] = useState("");
+  const [doctorCity, setDoctorCity] = useState("");
+  const [hospitalCity, setHospitalCity] = useState("");
+  const [hospitalDepartment, setHospitalDepartment] = useState("");
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
@@ -48,6 +57,65 @@ export default function LandingPage() {
           <Button size="lg" variant="outline" asChild>
             <Link to="/register">Register as a User</Link>
           </Button>
+        </div>
+
+        <div className="mt-10 w-full max-w-4xl rounded-2xl bg-white p-5 shadow-lg border text-left">
+          <div className="flex gap-2 mb-4">
+            <Button variant={tab === "doctors" ? "default" : "outline"} onClick={() => setTab("doctors")}>
+              Doctors
+            </Button>
+            <Button variant={tab === "hospitals" ? "default" : "outline"} onClick={() => setTab("hospitals")}>
+              Hospitals
+            </Button>
+          </div>
+
+          {tab === "doctors" ? (
+            <form
+              className="grid grid-cols-1 md:grid-cols-3 gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const params = new URLSearchParams();
+                if (doctorSpecialization) params.set("specialization", doctorSpecialization);
+                if (doctorCity) params.set("city", doctorCity);
+                navigate(`/doctors?${params.toString()}`);
+              }}
+            >
+              <Input
+                placeholder="Specialization"
+                value={doctorSpecialization}
+                onChange={(e) => setDoctorSpecialization(e.target.value)}
+              />
+              <Input
+                placeholder="City (optional)"
+                value={doctorCity}
+                onChange={(e) => setDoctorCity(e.target.value)}
+              />
+              <Button type="submit">Search Doctors</Button>
+            </form>
+          ) : (
+            <form
+              className="grid grid-cols-1 md:grid-cols-3 gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const params = new URLSearchParams();
+                if (hospitalCity) params.set("city", hospitalCity);
+                if (hospitalDepartment) params.set("department", hospitalDepartment);
+                navigate(`/hospitals?${params.toString()}`);
+              }}
+            >
+              <Input
+                placeholder="City"
+                value={hospitalCity}
+                onChange={(e) => setHospitalCity(e.target.value)}
+              />
+              <Input
+                placeholder="Department (optional)"
+                value={hospitalDepartment}
+                onChange={(e) => setHospitalDepartment(e.target.value)}
+              />
+              <Button type="submit">Search Hospitals</Button>
+            </form>
+          )}
         </div>
       </section>
 

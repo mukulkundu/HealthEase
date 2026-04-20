@@ -284,3 +284,60 @@ export async function sendWelcomeEmail(data: WelcomeEmailData) {
     html: buildEmailHtml(subject, content),
   });
 }
+
+interface VideoCallReminderData {
+  recipientName: string;
+  recipientEmail: string;
+  counterpartName: string;
+  appointmentId: string;
+  type: "independent" | "hospital";
+  startTime: string;
+}
+
+export async function sendVideoCallReminder(data: VideoCallReminderData) {
+  const frontendUrl = env.FRONTEND_URL;
+  const joinUrl = `${frontendUrl}/call/${data.appointmentId}?type=${data.type}`;
+  const subject = "Your video consultation is in 15 minutes";
+  const content = `
+    <h2 style="color:#111827;margin:0 0 8px">Your video consultation is starting soon!</h2>
+    <p style="color:#6b7280;margin:0 0 20px">
+      Hello ${data.recipientName}, your consultation with ${data.counterpartName} starts at ${to12h(data.startTime)}.
+    </p>
+    ${btn("Join Call", joinUrl)}
+    <ul style="padding-left:18px;color:#6b7280;font-size:14px">
+      <li>Ensure good lighting and a quiet location</li>
+      <li>Use a stable internet connection</li>
+      <li>Keep your camera at eye level</li>
+    </ul>
+  `;
+  await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: data.recipientEmail,
+    subject,
+    html: buildEmailHtml(subject, content),
+  });
+}
+
+interface VideoConsultationCompletedData {
+  patientName: string;
+  patientEmail: string;
+  doctorName: string;
+  date: string | Date;
+  startTime: string;
+}
+
+export async function sendVideoConsultationCompleted(data: VideoConsultationCompletedData) {
+  const subject = "Your video consultation is completed";
+  const content = `
+    <h2 style="color:#111827;margin:0 0 8px">Consultation completed</h2>
+    <p style="color:#6b7280;margin:0 0 20px">
+      Hi ${data.patientName}, your video consultation with Dr. ${data.doctorName} on ${formatDate(data.date)} at ${to12h(data.startTime)} has been marked as completed.
+    </p>
+  `;
+  await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to: data.patientEmail,
+    subject,
+    html: buildEmailHtml(subject, content),
+  });
+}

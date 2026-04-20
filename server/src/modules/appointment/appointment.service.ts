@@ -5,6 +5,7 @@ import {
   sendAppointmentCancellation,
   sendAppointmentReschedule,
 } from "../../services/email.service.js";
+import { createVideoRoom } from "../video/video.service.js";
 
 export const bookAppointment = async (
   patientId: string,
@@ -315,7 +316,7 @@ export const updateAppointmentStatus = async (
     throw new AppError(`Status must be one of: ${allowed.join(", ")}`, 400);
   }
 
-  return db.appointment.update({
+  const updated = await db.appointment.update({
     where: { id: appointmentId },
     data: { status },
     include: {
@@ -325,4 +326,14 @@ export const updateAppointmentStatus = async (
       payment: true,
     },
   });
+
+  if (status === "CONFIRMED") {
+    try {
+      await createVideoRoom(appointmentId, "independent");
+    } catch (err) {
+      console.error("Failed to auto-create video room:", err);
+    }
+  }
+
+  return updated;
 };

@@ -1,11 +1,17 @@
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
+import { useLocation } from "react-router-dom";
 
 interface Props {
   children: React.ReactNode;
 }
 
 export default function DashboardLayout({ children }: Props) {
+  const location = useLocation();
+  if (location.pathname.startsWith("/call")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

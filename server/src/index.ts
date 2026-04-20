@@ -24,6 +24,7 @@ import hospitalScheduleRoutes from "./modules/hospitalSchedule/hospitalSchedule.
 import hospitalAppointmentRoutes from "./modules/hospitalAppointment/hospitalAppointment.routes.js";
 import hospitalPaymentRoutes from "./modules/hospitalPayment/hospitalPayment.routes.js";
 import staffRoutes from "./modules/staff/staff.routes.js";
+import videoRoutes from "./modules/video/video.routes.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
 
 const app = express();
@@ -86,6 +87,7 @@ app.use("/api/hospital-schedules", hospitalScheduleRoutes);
 app.use("/api/hospital-appointments", hospitalAppointmentRoutes);
 app.use("/api/hospital-payments", hospitalPaymentRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/video", videoRoutes);
 
 // Health check
 app.get("/health", (_req, res) => {

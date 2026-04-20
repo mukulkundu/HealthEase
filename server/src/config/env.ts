@@ -27,4 +27,6 @@ export const env = {
   FRONTEND_URL: getEnv("FRONTEND_URL", "http://localhost:5173"),
   RESEND_API_KEY: getEnv("RESEND_API_KEY", ""),
   EMAIL_FROM: getEnv("EMAIL_FROM", "HealthEase <onboarding@resend.dev>"),
+  DAILY_API_KEY: getEnv("DAILY_API_KEY", ""),
+  DAILY_API_URL: getEnv("DAILY_API_URL", "https://api.daily.co/v1"),
 };

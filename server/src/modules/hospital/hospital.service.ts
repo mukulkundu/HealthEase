@@ -61,23 +61,57 @@ export async function updateHospital(adminId: string, data: Partial<{
   return prisma.hospital.update({ where: { id: hospital.id }, data });
 }
 
-export async function listHospitals(query?: string) {
-  const where = query
-    ? {
-        status: "APPROVED" as const,
-        OR: [
-          { name: { contains: query, mode: "insensitive" as const } },
-          { city: { contains: query, mode: "insensitive" as const } },
-          { state: { contains: query, mode: "insensitive" as const } },
-        ],
-      }
-    : { status: "APPROVED" as const };
+export async function listHospitals(filters: {
+  name?: string;
+  city?: string;
+  state?: string;
+  department?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const limit = filters.limit && filters.limit > 0 ? filters.limit : 12;
+  const skip = (page - 1) * limit;
+  const where = {
+    status: "APPROVED" as const,
+    ...(filters.name && {
+      name: { contains: filters.name, mode: "insensitive" as const },
+    }),
+    ...(filters.city && {
+      city: { contains: filters.city, mode: "insensitive" as const },
+    }),
+    ...(filters.state && {
+      state: { contains: filters.state, mode: "insensitive" as const },
+    }),
+  };
 
-  return prisma.hospital.findMany({
+  const hospitals = await prisma.hospital.findMany({
     where,
     include: { departments: { select: { id: true, name: true } } },
     orderBy: { name: "asc" },
   });
+
+  const filtered = filters.department
+    ? hospitals.filter((hospital) =>
+        hospital.departments.some((department) =>
+          department.name
+            .toLowerCase()
+            .includes(filters.department!.toLowerCase())
+        )
+      )
+    : hospitals;
+
+  const total = filtered.length;
+  const pagedHospitals = filtered.slice(skip, skip + limit);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  return {
+    hospitals: pagedHospitals,
+    total,
+    page,
+    totalPages,
+    hasMore: page < totalPages,
+  };
 }
 
 export async function getHospitalById(id: string) {

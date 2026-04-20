@@ -42,6 +42,15 @@ export interface DoctorProfile {
   totalReviews: number;
   isIndependent: boolean;
   user: Pick<User, "id" | "name" | "email" | "phone">;
+  schedules?: Schedule[];
+}
+
+export interface PaginatedDoctorsResponse {
+  doctors: DoctorProfile[];
+  total: number;
+  page: number;
+  totalPages: number;
+  hasMore: boolean;
 }
 
 export interface Schedule {
@@ -81,6 +90,10 @@ export interface Appointment {
   originalDate?: string | null;
   originalStartTime?: string | null;
   rescheduleCount: number;
+  videoRoomName?: string;
+  videoRoomUrl?: string;
+  videoCallStarted?: string;
+  videoCallEnded?: string;
 }
 
 export interface Payment {
@@ -125,6 +138,14 @@ export interface Hospital {
   adminId: string;
   createdAt: string;
   departments?: Department[];
+}
+
+export interface PaginatedHospitalsResponse {
+  hospitals: Hospital[];
+  total: number;
+  page: number;
+  totalPages: number;
+  hasMore: boolean;
 }
 
 export interface Department {
@@ -175,6 +196,26 @@ export interface HospitalAppointment {
   department?: Pick<Department, "id" | "name">;
   hospital?: Pick<Hospital, "id" | "name" | "city">;
   payment?: HospitalPaymentRecord;
+  videoRoomName?: string;
+  videoRoomUrl?: string;
+  videoCallStarted?: string;
+  videoCallEnded?: string;
+}
+
+export interface VideoParticipant {
+  userId: string;
+  userName: string;
+  isMuted: boolean;
+  isCameraOff: boolean;
+  isLocal: boolean;
+}
+
+export interface VideoCallState {
+  isInCall: boolean;
+  isMuted: boolean;
+  isCameraOff: boolean;
+  isScreenSharing: boolean;
+  participants: VideoParticipant[];
 }
 
 export interface HospitalPaymentRecord {

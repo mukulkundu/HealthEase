@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarCheck, Clock, Building2, Loader2 } from "lucide-react";
+import { Video } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import type { HospitalAppointment, AppointmentStatus } from "../../types";
+import { isCallJoinable, isCallNotStartedYet } from "../../utils/video";
 
 const statusStyles: Record<AppointmentStatus, string> = {
   PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
@@ -28,6 +31,7 @@ function to12h(t: string) {
 }
 
 export default function MyHospitalAppointmentsPage() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<HospitalAppointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,7 +59,7 @@ export default function MyHospitalAppointmentsPage() {
   const upcoming = list.filter((a) => ["PENDING", "CONFIRMED"].includes(a.status));
   const past = list.filter((a) => ["COMPLETED", "NO_SHOW", "CANCELLED"].includes(a.status));
 
-  const ApptCard = ({ appt }: { appt: HospitalAppointment }) => {
+  const renderApptCard = (appt: HospitalAppointment) => {
     const isCancellable = appt.status === "PENDING" || appt.status === "CONFIRMED";
     return (
       <Card className="hover:shadow-sm transition-shadow">
@@ -99,6 +103,22 @@ export default function MyHospitalAppointmentsPage() {
                   Cancel
                 </Button>
               )}
+              {appt.status === "CONFIRMED" && isCallJoinable(appt) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-green-700 border-green-300 hover:bg-green-50 text-xs"
+                  onClick={() => navigate(`/call/${appt.id}?type=hospital`)}
+                >
+                  <Video className="h-3.5 w-3.5 mr-1" />
+                  Join Call
+                </Button>
+              )}
+              {appt.status === "CONFIRMED" && isCallNotStartedYet(appt) && (
+                <Button variant="outline" size="sm" className="text-xs" disabled>
+                  Call Starts At {to12h(appt.startTime)}
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -106,7 +126,7 @@ export default function MyHospitalAppointmentsPage() {
     );
   };
 
-  const EmptyState = () => (
+  const renderEmptyState = () => (
     <div className="rounded-lg border bg-gray-50 py-12 text-center">
       <CalendarCheck className="h-8 w-8 text-gray-300 mx-auto mb-2" />
       <p className="text-sm text-gray-500">No appointments here</p>
@@ -132,10 +152,10 @@ export default function MyHospitalAppointmentsPage() {
               <TabsTrigger value="past">Past</TabsTrigger>
             </TabsList>
             <TabsContent value="upcoming" className="space-y-3">
-              {upcoming.length === 0 ? <EmptyState /> : upcoming.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {upcoming.length === 0 ? renderEmptyState() : upcoming.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
             <TabsContent value="past" className="space-y-3">
-              {past.length === 0 ? <EmptyState /> : past.map((a) => <ApptCard key={a.id} appt={a} />)}
+              {past.length === 0 ? renderEmptyState() : past.map((a) => <div key={a.id}>{renderApptCard(a)}</div>)}
             </TabsContent>
           </Tabs>
         )}
