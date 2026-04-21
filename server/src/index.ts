@@ -26,6 +26,7 @@ import hospitalPaymentRoutes from "./modules/hospitalPayment/hospitalPayment.rou
 import staffRoutes from "./modules/staff/staff.routes.js";
 import videoRoutes from "./modules/video/video.routes.js";
 import { startReminderJob } from "./jobs/reminder.job.js";
+import { startChatCleanupJob } from "./jobs/chatCleanup.job.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -104,6 +105,7 @@ import("./socket/socket.handler.js").then(({ registerSocketHandlers }) => {
 
 // Start reminder cron job
 startReminderJob();
+startChatCleanupJob();
 
 // Start server
 httpServer.listen(Number(env.PORT), () => {

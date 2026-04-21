@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Send } from "lucide-react";
+import axios from "axios";
+import { ArrowLeft, Loader2, MessageSquare, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { chatApi } from "../../api/chat.api";
-import { appointmentApi } from "../../api/appointment.api";
 import { useAuthStore } from "../../store/authStore";
 import { useNotificationsStore } from "../../store/notificationsStore";
 import { socket } from "../../socket/socket";
@@ -58,11 +58,12 @@ export default function ChatPage() {
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
+  const [sendingIndicator, setSendingIndicator] = useState(false);
+  const [chatExpired, setChatExpired] = useState(false);
+  const [chatDisabled, setChatDisabled] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const pendingOptimisticId = useRef<string | null>(null);
 
   const otherUser = appointment
     ? user?.role === "PATIENT"
@@ -96,7 +97,12 @@ export default function ChatPage() {
         // Load messages
         const msgs = await chatApi.getMessages(appointmentId);
         setMessages(msgs);
-      } catch {
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setChatExpired(true);
+          setChatDisabled(true);
+          return;
+        }
         toast.error("Failed to load chat");
       } finally {
         setLoading(false);
@@ -113,14 +119,8 @@ export default function ChatPage() {
     socket.emit("join_appointment_room", { appointmentId });
 
     function onNewMessage(msg: Message) {
-      setMessages((prev) => {
-        // Replace optimistic message if IDs match, otherwise append
-        if (pendingOptimisticId.current && msg.senderId === user?.id) {
-          pendingOptimisticId.current = null;
-          return [...prev.filter((m) => !m.id.startsWith("optimistic_")), msg];
-        }
-        return [...prev, msg];
-      });
+      setMessages((prev) => [...prev, msg]);
+      setSendingIndicator(false);
     }
 
     function onMessagesRead({ senderId }: { senderId: string }) {
@@ -135,14 +135,24 @@ export default function ChatPage() {
       toast.error(err);
     }
 
+    function onChatError(payload: { message?: string } | string) {
+      const message =
+        typeof payload === "string" ? payload : payload.message ?? "Chat is not available";
+      toast.error(message);
+      setChatDisabled(true);
+      setSendingIndicator(false);
+    }
+
     socket.on("new_message", onNewMessage);
     socket.on("messages_read", onMessagesRead);
     socket.on("error", onError);
+    socket.on("chat_error", onChatError);
 
     return () => {
       socket.off("new_message", onNewMessage);
       socket.off("messages_read", onMessagesRead);
       socket.off("error", onError);
+      socket.off("chat_error", onChatError);
     };
   }, [appointmentId, user?.id]);
 
@@ -159,26 +169,11 @@ export default function ChatPage() {
   }, [appointmentId, otherUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = () => {
-    if (!input.trim() || !appointmentId || !otherUser?.id || sending) return;
+    if (!input.trim() || !appointmentId || !otherUser?.id || chatDisabled || chatExpired) return;
 
     const content = input.trim();
     setInput("");
-    setSending(true);
-
-    // Optimistic update
-    const optimisticId = `optimistic_${Date.now()}`;
-    pendingOptimisticId.current = optimisticId;
-    const optimisticMsg: Message = {
-      id: optimisticId,
-      content,
-      senderId: user!.id,
-      receiverId: otherUser.id,
-      appointmentId: appointmentId!,
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      sender: { id: user!.id, name: user!.name },
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
+    setSendingIndicator(true);
 
     socket.emit("send_message", {
       appointmentId,
@@ -186,7 +181,7 @@ export default function ChatPage() {
       content,
     });
 
-    setSending(false);
+    window.setTimeout(() => setSendingIndicator(false), 1500);
     inputRef.current?.focus();
   };
 
@@ -211,6 +206,28 @@ export default function ChatPage() {
       <DashboardLayout>
         <div className="flex justify-center items-center h-96">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (chatExpired) {
+    return (
+      <DashboardLayout>
+        <div className="max-w-2xl mx-auto py-12 px-4">
+          <div className="border border-gray-200 rounded-xl bg-white p-8 text-center">
+            <div className="relative h-12 w-12 mx-auto mb-4 text-gray-500">
+              <MessageSquare className="h-12 w-12" />
+              <X className="h-5 w-5 absolute -right-1 -top-1 text-red-500" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Chat Unavailable</h1>
+            <p className="text-sm text-gray-600 mt-2">
+              This chat has expired. Chats are available for 3 days after your appointment date.
+            </p>
+            <Button className="mt-6" onClick={() => navigate("/appointments")}>
+              Back to Appointments
+            </Button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -314,18 +331,27 @@ export default function ChatPage() {
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-32 min-h-[2.5rem]"
+            disabled={chatDisabled}
+            className="flex-1 resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-h-32 min-h-10"
             style={{ overflowY: input.split("\n").length > 3 ? "auto" : "hidden" }}
           />
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={!input.trim() || sending}
+            disabled={!input.trim() || chatDisabled}
             className="h-10 w-10 p-0 shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
+        {chatDisabled && (
+          <div className="px-4 pb-2 text-xs text-red-600 bg-white">
+            Chat is unavailable for this appointment.
+          </div>
+        )}
+        {sendingIndicator && !chatDisabled && (
+          <div className="px-4 pb-2 text-xs text-gray-500 bg-white">Sending...</div>
+        )}
       </div>
     </DashboardLayout>
   );

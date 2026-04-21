@@ -23,6 +23,13 @@ const statusStyles: Record<AppointmentStatus, string> = {
   NO_SHOW: "bg-gray-50 text-gray-600 border-gray-200",
 };
 
+function isChatAvailable(appointment: Appointment) {
+  const appointmentDate = new Date(appointment.date);
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+  return appointmentDate >= threeDaysAgo;
+}
+
 export default function AppointmentCard({
   appointment,
   role,
@@ -41,6 +48,11 @@ export default function AppointmentCard({
       : appointment.patient?.name ?? "—";
 
   const dateStr = typeof appointment.date === "string" ? appointment.date : String(appointment.date);
+  const canShowChat =
+    (appointment.status === "CONFIRMED" || appointment.status === "COMPLETED") &&
+    isChatAvailable(appointment);
+  const chatExpired =
+    (appointment.status === "CONFIRMED" || appointment.status === "COMPLETED") && !canShowChat;
   const formattedDate = new Date(dateStr).toLocaleDateString("en-IN", {
     weekday: "short",
     year: "numeric",
@@ -98,7 +110,7 @@ export default function AppointmentCard({
           {/* Right: status + actions */}
           <div className="flex flex-col items-end gap-2 shrink-0">
             {/* Chat button for CONFIRMED or COMPLETED appointments */}
-            {(appointment.status === "CONFIRMED" || appointment.status === "COMPLETED") && (
+            {canShowChat && (
               <Button
                 variant="outline"
                 size="sm"
@@ -108,6 +120,14 @@ export default function AppointmentCard({
                 <MessageSquare className="h-3.5 w-3.5" />
                 Chat
               </Button>
+            )}
+            {chatExpired && (
+              <Badge
+                variant="outline"
+                className="text-xs bg-gray-100 text-gray-600 border-gray-200"
+              >
+                Chat Expired
+              </Badge>
             )}
             {appointment.status === "CONFIRMED" && isCallJoinable(appointment) && (
               <Button

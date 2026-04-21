@@ -9,6 +9,12 @@ import { useNotificationsStore } from "../../store/notificationsStore";
 import { socket } from "../../socket/socket";
 import type { Conversation } from "../../types";
 
+function isConversationChatAvailable(appointmentDate: string) {
+  const date = new Date(appointmentDate);
+  const expiryDate = new Date(date.getTime() + 3 * 24 * 60 * 60 * 1000);
+  return Date.now() <= expiryDate.getTime();
+}
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -45,8 +51,11 @@ export default function ConversationsPage() {
   const fetchConversations = async () => {
     try {
       const data = await chatApi.getConversations();
-      setConversations(data);
-      const total = data.reduce((sum, c) => sum + c.unreadCount, 0);
+      const activeConversations = data.filter((conv) =>
+        isConversationChatAvailable(conv.appointmentDate)
+      );
+      setConversations(activeConversations);
+      const total = activeConversations.reduce((sum, c) => sum + c.unreadCount, 0);
       setUnread(total);
     } catch {
       toast.error("Failed to load conversations");

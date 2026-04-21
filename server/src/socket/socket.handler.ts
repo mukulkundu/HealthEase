@@ -1,5 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import db from "../config/db.js";
+import { isChatExpired } from "../modules/chat/chat.service.js";
 
 export function registerSocketHandlers(io: Server) {
   io.on("connection", (socket: Socket) => {
@@ -42,6 +43,13 @@ export function registerSocketHandlers(io: Server) {
           }
           isPatient = appointment.patientId === userId;
           isDoctor = appointment.doctor.userId === userId;
+
+          if (isChatExpired(appointment.date)) {
+            socket.emit("chat_error", {
+              message: "Chat has expired for this appointment",
+            });
+            return;
+          }
         }
 
         if (!isPatient && !isDoctor) {
@@ -101,6 +109,13 @@ export function registerSocketHandlers(io: Server) {
 
           if (!appointment) {
             socket.emit("error", "No valid appointment found for this conversation");
+            return;
+          }
+
+          if (isChatExpired(appointment.date)) {
+            socket.emit("chat_error", {
+              message: "Chat has expired for this appointment",
+            });
             return;
           }
 
