@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import { hospitalApi } from "../../api/hospital.api";
 import { hospitalPaymentApi } from "../../api/hospitalPayment.api";
-import { hospitalScheduleApi } from "../../api/hospitalSchedule.api";
 import SlotPicker from "../../components/shared/SlotPicker";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

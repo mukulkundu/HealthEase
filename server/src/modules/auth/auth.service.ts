@@ -3,12 +3,13 @@ import { hashPassword, comparePassword } from "../../utils/hash.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../../utils/jwt.js";
 import { AppError } from "../../middleware/error.middleware.js";
 import { sendWelcomeEmail } from "../../services/email.service.js";
+import type { Role } from "@prisma/client";
 
 export const registerUser = async (data: {
   name: string;
   email: string;
   password: string;
-  role: "PATIENT" | "DOCTOR";
+  role: Role;
 }) => {
   const existing = await db.user.findUnique({ where: { email: data.email } });
   if (existing) throw new AppError("Email already in use", 409);

@@ -2,6 +2,7 @@ import type { Response, NextFunction, Request } from "express";
 import * as reviewService from "./review.service.js";
 import { sendSuccess, sendError } from "../../utils/apiResponse.js";
 import type { AuthRequest } from "../../middleware/auth.middleware.js";
+import { AppError } from "../../middleware/error.middleware.js";
 
 export const createReview = async (
   req: AuthRequest,
@@ -33,7 +34,10 @@ export const getDoctorReviews = async (
   next: NextFunction
 ) => {
   try {
-    const { doctorId } = req.params;
+    const doctorId = Array.isArray(req.params.doctorId)
+      ? req.params.doctorId[0]
+      : req.params.doctorId;
+    if (!doctorId) throw new AppError("doctorId is required", 400);
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
 
@@ -63,7 +67,10 @@ export const checkCanReview = async (
   next: NextFunction
 ) => {
   try {
-    const { appointmentId } = req.params;
+    const appointmentId = Array.isArray(req.params.appointmentId)
+      ? req.params.appointmentId[0]
+      : req.params.appointmentId;
+    if (!appointmentId) throw new AppError("appointmentId is required", 400);
     const result = await reviewService.checkCanReview(req.user!.id, appointmentId);
     return sendSuccess(res, result);
   } catch (err) {

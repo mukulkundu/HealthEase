@@ -196,7 +196,7 @@ export default function DoctorListPage() {
       tags.push({
         label: `${filters.minExperience}+ years`,
         onRemove: () => {
-          const next = { ...filters, minExperience: "" };
+          const next: DoctorFilters = { ...filters, minExperience: "" };
           setFilters(next);
           syncUrl(next);
         },
@@ -206,7 +206,7 @@ export default function DoctorListPage() {
       tags.push({
         label: `${filters.minRating}★ & above`,
         onRemove: () => {
-          const next = { ...filters, minRating: "" };
+          const next: DoctorFilters = { ...filters, minRating: "" };
           setFilters(next);
           syncUrl(next);
         },
@@ -216,7 +216,7 @@ export default function DoctorListPage() {
       tags.push({
         label: `Fee: ${filters.minFee || 0}-${filters.maxFee || "Any"}`,
         onRemove: () => {
-          const next = { ...filters, minFee: "", maxFee: "" };
+          const next: DoctorFilters = { ...filters, minFee: "", maxFee: "" };
           setFilters(next);
           syncUrl(next);
         },

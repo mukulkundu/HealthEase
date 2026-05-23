@@ -39,9 +39,15 @@ export default function ManageDepartmentsPage() {
 
     doctorApi
       .getAll()
-      .then((list) => setDoctors(
-        list.map((d) => ({ id: d.id, name: d.user?.name ?? "—", specialization: d.specialization }))
-      ))
+      .then((list) =>
+        setDoctors(
+          (list.doctors ?? []).map((d) => ({
+            id: d.id,
+            name: d.user?.name ?? "—",
+            specialization: d.specialization,
+          }))
+        )
+      )
       .catch(() => {});
   }, []);
 

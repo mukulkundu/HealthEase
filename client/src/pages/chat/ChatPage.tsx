@@ -119,7 +119,7 @@ export default function ChatPage() {
     socket.emit("join_appointment_room", { appointmentId });
 
     function onNewMessage(msg: Message) {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       setSendingIndicator(false);
     }
 

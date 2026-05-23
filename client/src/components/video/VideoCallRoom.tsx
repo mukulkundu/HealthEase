@@ -121,11 +121,13 @@ export default function VideoCallRoom({
 
     socket.emit("join_appointment_room", { appointmentId, type });
     const onMsg = (msg: Message) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
       if (!chatOpen) setUnreadCount((n) => n + 1);
     };
     socket.on("new_message", onMsg);
-    return () => socket.off("new_message", onMsg);
+    return () => {
+      socket.off("new_message", onMsg);
+    };
   }, [appointmentId, chatOpen, type]);
 
   const handleToggleMute = async () => {
@@ -183,7 +185,7 @@ export default function VideoCallRoom({
 
   return (
     <div className="h-screen w-screen bg-black text-white relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-black" />
+      <div className="absolute inset-0 bg-linear-to-br from-gray-900 to-black" />
       <div className="absolute top-4 left-4 right-4 z-20 flex items-center justify-between">
         <div>
           <p className="font-semibold">HealthEase</p>

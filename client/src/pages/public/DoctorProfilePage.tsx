@@ -20,10 +20,18 @@ import {
   Loader2,
   CalendarCheck,
 } from "lucide-react";
-import type { DoctorProfile, Schedule, Review } from "../../types";
+import type { DoctorProfile, Schedule, Review, DayOfWeek } from "../../types";
 import DoctorCard from "../../components/shared/DoctorCard";
 
-const DAY_ORDER = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+const DAY_ORDER: DayOfWeek[] = [
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
+];
 
 export default function DoctorProfilePage() {
   const { id } = useParams<{ id: string }>();

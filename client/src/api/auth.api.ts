@@ -1,5 +1,5 @@
 import client from "./client";
-import type { ApiResponse, User } from "../types";
+import type { ApiResponse, User, Role } from "../types";
 
 /** Response shape when backend returns only { user } (cookie-based auth) */
 export interface AuthUserResponse {
@@ -11,7 +11,7 @@ export const authApi = {
     name: string;
     email: string;
     password: string;
-    role: "PATIENT" | "DOCTOR";
+    role: Role;
   }): Promise<ApiResponse<AuthUserResponse>> => {
     const res = await client.post<ApiResponse<AuthUserResponse>>("/auth/register", data);
     return res.data;
@@ -36,6 +36,6 @@ export const authApi = {
 
   me: async (): Promise<User | null> => {
     const res = await client.get<ApiResponse<User>>("/auth/me");
-    return (res.data?.data ?? res.data?.user ?? null) as User | null;
+    return res.data?.data ?? null;
   },
 };

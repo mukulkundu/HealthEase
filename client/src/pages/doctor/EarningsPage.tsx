@@ -234,7 +234,10 @@ export default function EarningsPage() {
                         tickFormatter={(v) => `₹${v}`}
                       />
                       <Tooltip
-                        formatter={(value: number) => [`₹${value.toFixed(0)}`, "Earnings"]}
+                        formatter={(value) => {
+                          const numeric = typeof value === "number" ? value : Number(value ?? 0);
+                          return [`₹${numeric.toFixed(0)}`, "Earnings"];
+                        }}
                         contentStyle={{
                           borderRadius: "8px",
                           border: "1px solid #e5e7eb",
@@ -245,7 +248,10 @@ export default function EarningsPage() {
                         <LabelList
                           dataKey="earnings"
                           position="top"
-                          formatter={(v: number) => (v > 0 ? `₹${v.toFixed(0)}` : "")}
+                          formatter={(v) => {
+                            const numeric = typeof v === "number" ? v : Number(v ?? 0);
+                            return numeric > 0 ? `₹${numeric.toFixed(0)}` : "";
+                          }}
                           style={{ fontSize: "10px", fill: "#6b7280" }}
                         />
                       </Bar>

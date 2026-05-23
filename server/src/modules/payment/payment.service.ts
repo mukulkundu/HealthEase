@@ -44,13 +44,6 @@ export const createOrderForAppointment = async (
     amount: amountPaise,
     currency: "INR",
     receipt: `appt_${data.doctorId}_${Date.now()}`,
-    notes: {
-      patientId,
-      doctorId: data.doctorId,
-      date: data.date,
-      startTime: data.startTime,
-      endTime: data.endTime,
-    },
   });
 
   return {
